@@ -2,8 +2,10 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"server/api/serviceaccess"
+	"server/api/tools/externaltools/postgresapi"
 	"server/environment"
 )
 
@@ -15,13 +17,23 @@ func NewServer(options ServerOptions) (*Server, error) {
 
 	mux := http.NewServeMux()
 
+	// Remove once middleware injected
 	muxHandler := http.Handler(mux)
 
+	// Init Postgres
+	log.Println("connecting to postgres...")
+	postgresClient, err := postgresapi.Connect(env)
+	if err != nil {
+		return nil, err
+	}
+
 	server := Server{
-		Options:  options,
-		Services: serviceaccess.Access{},
-		Env:      *env,
-		Mux:      &muxHandler,
+		Options: options,
+		Services: serviceaccess.Access{
+			Postgres: postgresClient,
+		},
+		Env: *env,
+		Mux: &muxHandler,
 	}
 
 	var svr server_interface = &server
