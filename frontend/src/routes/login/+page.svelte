@@ -1,15 +1,28 @@
 <script lang="ts">
     import { userState } from '$lib/state/user.svelte.ts';
     import { goto } from '$app/navigation';
+	import { getClient } from '$lib/apis/sessions.svelte';
   
-    let username = $state("");
-  
-    function handleLogin() {
-      // Intentional logic: only update state if username isn't empty
-      if (username.trim()) {
-        userState.setSession({ username: username.toLowerCase() });
-        goto('/review'); 
-      }
+    let email = $state("");
+    let password = $state("");
+
+    async function handleLogin() {
+      const sessionAPI = getClient();
+
+      const { token } = await sessionAPI.signIn({ 
+        email: email,
+        password: password,
+      });
+
+      await fetch("/actions/set-cookie", {
+        method: "POST",
+        body: JSON.stringify({
+          key: "auth",
+          value: token,
+        }),
+      });
+
+      console.log("Session token: ", token);
     }
   </script>
   
@@ -28,7 +41,7 @@
           </label>
           <input 
             type="text" 
-            bind:value={username}
+            bind:value={email}
             placeholder="ENTER USERNAME" 
             class="input input-bordered w-full rounded-none border-black border-2 focus:outline-none placeholder:opacity-30 text-sm"
           />
@@ -40,6 +53,7 @@
           </label>
           <input 
             type="password" 
+            bind:value={password}
             placeholder="••••••••" 
             class="input input-bordered w-full rounded-none border-black border-2 focus:outline-none placeholder:opacity-30 text-sm"
           />
