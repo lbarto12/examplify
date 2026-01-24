@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"server/api/server"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func Main(server *server.Server) {
@@ -22,4 +25,10 @@ func Main(server *server.Server) {
 	// }
 
 	// fmt.Println("result: ", result.Text())
+
+	chi.Walk(server.Mux, func(method, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+		fmt.Println(method, route)
+		return nil
+	})
+
 }
