@@ -14,7 +14,11 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-func NewServer(options ServerOptions, handlers func(mux *chi.Mux, services *serviceaccess.Access)) (*Server, error) {
+func NewServer(
+	options ServerOptions,
+	handlers func(mux *chi.Mux, services *serviceaccess.Access),
+	middlewares func(mux *chi.Mux),
+) (*Server, error) {
 	env, err := environment.Get()
 	if err != nil {
 		return nil, err
@@ -56,6 +60,8 @@ func NewServer(options ServerOptions, handlers func(mux *chi.Mux, services *serv
 		Minio:    minioClient,
 		Gemini:   geminiClient,
 	}
+
+	middlewares(mux)
 
 	handlers(mux, &appServices)
 

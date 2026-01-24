@@ -25,7 +25,10 @@ func main() {
 		Host: "localhost",
 		Port: "8080",
 		Cors: nil,
-	}, setup.Handlers)
+	},
+		setup.Handlers,
+		setup.Middleware,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
