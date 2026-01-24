@@ -1,9 +1,13 @@
 <script lang="ts">
-	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
-
+	import "../app.css";
+	import Navbar from "$lib/components/ui/Navbar.svelte";
 	let { children } = $props();
-</script>
-
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
-{@render children()}
+  </script>
+  
+  <div data-theme="lofi" class="min-h-screen bg-base-100 font-sans">
+	<Navbar />
+	
+	<main class="max-w-4xl mx-auto p-8">
+	  {@render children()}
+	</main>
+  </div>
