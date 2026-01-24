@@ -24,7 +24,9 @@ func NewServer(options ServerOptions) (*Server, error) {
 		Mux:      &muxHandler,
 	}
 
-	return &server, nil
+	var svr server_interface = &server
+
+	return svr.(*Server), nil
 }
 
 func (server Server) Launch() error {
