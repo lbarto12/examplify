@@ -4,14 +4,14 @@ go 1.24.0
 
 require (
 	github.com/caarlos0/env/v11 v11.3.1
-	github.com/deepmap/oapi-codegen v1.16.3
 	github.com/go-chi/chi/v5 v5.2.4
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
-	github.com/labstack/gommon v0.4.0
+	github.com/labstack/gommon v0.4.2
 	github.com/lib/pq v1.10.9
 	github.com/minio/minio-go/v7 v7.0.98
+	github.com/oapi-codegen/runtime v1.1.2
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/rs/cors v1.11.1
 	golang.org/x/crypto v0.46.0
