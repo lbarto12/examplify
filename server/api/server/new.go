@@ -4,9 +4,14 @@ import (
 	"fmt"
 	"net/http"
 	"server/api/serviceaccess"
+	"server/environment"
 )
 
 func NewServer(options ServerOptions) (*Server, error) {
+	env, err := environment.Get()
+	if err != nil {
+		return nil, err
+	}
 
 	mux := http.NewServeMux()
 
@@ -15,6 +20,7 @@ func NewServer(options ServerOptions) (*Server, error) {
 	server := Server{
 		Options:  options,
 		Services: serviceaccess.Access{},
+		Env:      *env,
 		Mux:      &muxHandler,
 	}
 
