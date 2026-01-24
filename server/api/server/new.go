@@ -11,9 +11,14 @@ import (
 	"server/environment"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/pressly/goose/v3"
 )
 
-func NewServer(options ServerOptions) (*Server, error) {
+func NewServer(
+	options ServerOptions,
+	handlers func(mux *chi.Mux, services *serviceaccess.Access),
+	middlewares func(mux *chi.Mux),
+) (*Server, error) {
 	env, err := environment.Get()
 	if err != nil {
 		return nil, err
@@ -25,6 +30,14 @@ func NewServer(options ServerOptions) (*Server, error) {
 	log.Println("connecting to postgres...")
 	postgresClient, err := postgresapi.Connect(env)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := goose.SetDialect("postgres"); err != nil {
+		return nil, err
+	}
+
+	if err := goose.Up(postgresClient, "sqlc/migrations"); err != nil {
 		return nil, err
 	}
 
@@ -42,15 +55,21 @@ func NewServer(options ServerOptions) (*Server, error) {
 		return nil, err
 	}
 
+	appServices := serviceaccess.Access{
+		Postgres: postgresClient,
+		Minio:    minioClient,
+		Gemini:   geminiClient,
+	}
+
+	middlewares(mux)
+
+	handlers(mux, &appServices)
+
 	server := Server{
-		Options: options,
-		Services: serviceaccess.Access{
-			Postgres: postgresClient,
-			Minio:    minioClient,
-			Gemini:   geminiClient,
-		},
-		Env: *env,
-		Mux: mux,
+		Options:  options,
+		Services: appServices,
+		Env:      *env,
+		Mux:      mux,
 	}
 
 	var svr server_interface = &server

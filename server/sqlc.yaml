@@ -1,0 +1,9 @@
+
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "sqlc/queries/sessionqueries"
+    schema: "sqlc/migrations"
+    gen:
+      go:
+        out: "sqlc/sqlgen"

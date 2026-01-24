@@ -44,6 +44,8 @@
 		"vite": "^7.2.6"
 	},
 	"dependencies": {
-		"@google/genai": "^1.38.0"
+		"@zodios/core": "^10.9.6",
+		"axios": "^1.13.2",
+		"zod": "^4.3.6"
 	}
 }
