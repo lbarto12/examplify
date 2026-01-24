@@ -1,9 +1,10 @@
 <script lang="ts">
-	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
-
+	import "../app.css";
 	let { children } = $props();
-</script>
-
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
-{@render children()}
+  </script>
+  
+  <div data-theme="lofi" class="min-h-screen bg-base-100 font-sans">
+	<main class="max-w-4xl mx-auto p-8">
+	  {@render children()}
+	</main>
+  </div>
