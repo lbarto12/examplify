@@ -7,6 +7,7 @@ import (
 )
 
 type server_interface interface {
+	Launch() error
 }
 
 type Server struct {
