@@ -9,6 +9,8 @@ import (
 	"server/api/tools/externaltools/minioapi"
 	"server/api/tools/externaltools/postgresapi"
 	"server/environment"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func NewServer(options ServerOptions) (*Server, error) {
@@ -17,10 +19,7 @@ func NewServer(options ServerOptions) (*Server, error) {
 		return nil, err
 	}
 
-	mux := http.NewServeMux()
-
-	// Remove once middleware injected
-	muxHandler := http.Handler(mux)
+	mux := chi.NewMux()
 
 	// Init Postgres
 	log.Println("connecting to postgres...")
@@ -51,7 +50,7 @@ func NewServer(options ServerOptions) (*Server, error) {
 			Gemini:   geminiClient,
 		},
 		Env: *env,
-		Mux: &muxHandler,
+		Mux: mux,
 	}
 
 	var svr server_interface = &server
@@ -61,5 +60,5 @@ func NewServer(options ServerOptions) (*Server, error) {
 
 func (server Server) Launch() error {
 	addr := fmt.Sprintf("%s:%s", server.Options.Host, server.Options.Port)
-	return http.ListenAndServe(addr, *server.Mux)
+	return http.ListenAndServe(addr, server.Mux)
 }

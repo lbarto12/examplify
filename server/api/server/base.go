@@ -1,9 +1,10 @@
 package server
 
 import (
-	"net/http"
 	"server/api/serviceaccess"
 	"server/environment"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type server_interface interface {
@@ -14,5 +15,5 @@ type Server struct {
 	Options  ServerOptions
 	Services serviceaccess.Access
 	Env      environment.Vars
-	Mux      *http.Handler
+	Mux      *chi.Mux
 }
