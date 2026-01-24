@@ -28,6 +28,7 @@ func main() {
 	},
 		setup.Handlers,
 		setup.Middleware,
+		setup.ConfigureCors,
 	)
 	if err != nil {
 		log.Fatal(err)

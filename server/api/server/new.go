@@ -11,6 +11,7 @@ import (
 	"server/environment"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 	"github.com/pressly/goose/v3"
 )
 
@@ -18,6 +19,7 @@ func NewServer(
 	options ServerOptions,
 	handlers func(mux *chi.Mux, services *serviceaccess.Access),
 	middlewares func(mux *chi.Mux),
+	corsConfig func(*environment.Vars) *cors.Options,
 ) (*Server, error) {
 	env, err := environment.Get()
 	if err != nil {
@@ -60,6 +62,8 @@ func NewServer(
 		Minio:    minioClient,
 		Gemini:   geminiClient,
 	}
+
+	mux.Use(cors.Handler(*corsConfig(env)))
 
 	middlewares(mux)
 
