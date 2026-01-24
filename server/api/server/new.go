@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"server/api/serviceaccess"
+	"server/api/tools/externaltools/minioapi"
 	"server/api/tools/externaltools/postgresapi"
 	"server/environment"
 )
@@ -27,10 +28,18 @@ func NewServer(options ServerOptions) (*Server, error) {
 		return nil, err
 	}
 
+	// Init Minio
+	log.Println("connecting to minio...")
+	minioClient, err := minioapi.Connect(env)
+	if err != nil {
+		return nil, err
+	}
+
 	server := Server{
 		Options: options,
 		Services: serviceaccess.Access{
 			Postgres: postgresClient,
+			Minio:    minioClient,
 		},
 		Env: *env,
 		Mux: &muxHandler,
