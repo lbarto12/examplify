@@ -22,6 +22,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	Main(svr)
+
 	log.Printf("Launching Server on %s:%s", svr.Options.Host, svr.Options.Port)
 	log.Fatal(svr.Launch())
 }

@@ -28,7 +28,7 @@ type Vars struct {
 	MinioUseSSL        bool   `env:"MINIO_USE_SSL,notEmpty"`
 
 	// Gemini
-	// GeminiAIKey string `env:"GEMINI_API_KEY,notEmpty"`
+	GeminiAIKey string `env:"GEMINI_API_KEY,notEmpty"`
 }
 
 func Get() (*Vars, error) {

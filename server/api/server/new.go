@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"server/api/serviceaccess"
+	"server/api/tools/externaltools/geminiapi"
 	"server/api/tools/externaltools/minioapi"
 	"server/api/tools/externaltools/postgresapi"
 	"server/environment"
@@ -35,11 +36,19 @@ func NewServer(options ServerOptions) (*Server, error) {
 		return nil, err
 	}
 
+	// Init Gemini
+	log.Println("connecting to gemini...")
+	geminiClient, err := geminiapi.Connect(env)
+	if err != nil {
+		return nil, err
+	}
+
 	server := Server{
 		Options: options,
 		Services: serviceaccess.Access{
 			Postgres: postgresClient,
 			Minio:    minioClient,
+			Gemini:   geminiClient,
 		},
 		Env: *env,
 		Mux: &muxHandler,
