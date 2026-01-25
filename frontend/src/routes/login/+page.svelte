@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { userState } from '$lib/state/user.svelte.ts';
-    import { goto } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { getClient } from '$lib/apis/sessions.svelte';
   
     let email = $state("");
@@ -22,7 +21,7 @@
         }),
       });
 
-      console.log("Session token: ", token);
+      await goto("/dashboard");
     }
   </script>
   
