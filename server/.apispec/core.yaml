@@ -158,9 +158,78 @@ paths:
           description: Collection not found
         "500":
           description: Failed to retrieve analyses
+  
+  /core/collection/{id}/analysis/{analysisID}:
+    get:
+      operationId: getAnalysis
+      summary: Retrieve and analysis
+      description: |
+        Returns all AI analyses that have been generated
+        for the given collection.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: analysisID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of analyses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionAnalysis'
+        "404":
+          description: Collection not found
+        "500":
+          description: Failed to retrieve analyses
+
+  /core/courses:
+    get:
+      operationId: getCourses
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseNames'
+  
+  /core/course/{courseID}/collections:
+    get:
+      operationId: getCourseCollections
+      parameters:
+        - name: courseID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionNames'
+
 
 components:
   schemas:
+
+    CourseNames:
+      type: array
+      items:
+        type: string
+    
+    CollectionNames:
+      type: array
+      items:
+        $ref: '#/components/schemas/Collection'
 
     UploadFileRequest:
       properties:
@@ -258,7 +327,6 @@ components:
         - type
 
     CollectionAnalysis:
-      type: object
       properties:
         id:
           type: string
@@ -271,11 +339,8 @@ components:
             - quiz
             - deep_summary
         result:
-          type: object
-          additionalProperties: true
-        createdAt:
           type: string
-          format: date-time
+
       required:
         - id
         - type

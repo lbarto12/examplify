@@ -1,13 +1,10 @@
 -- name: CreateCollectionAnalysis :one
 INSERT INTO collection_analyses (snapshot_id, type, result)
 VALUES ($1, $2, $3)
-RETURNING id, type, result, created_at;
+RETURNING *;
 
 -- name: GetCollectionAnalysesByCollection :many
-SELECT a.id,
-       a.type,
-       a.result,
-       a.created_at
+SELECT a.*
 FROM collection_analyses a
 JOIN collection_snapshots s ON s.id = a.snapshot_id
 WHERE s.collection_id = $1
@@ -24,3 +21,7 @@ SELECT id, collection_id, combined_content, created_at
 FROM collection_snapshots
 WHERE collection_id = $1
 ORDER BY created_at DESC;
+
+-- name: GetAnalysis :one
+SELECT * FROM collection_analyses
+WHERE id = @id;

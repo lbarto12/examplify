@@ -8,7 +8,6 @@ package sqlgen
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -16,7 +15,7 @@ import (
 const createCollectionAnalysis = `-- name: CreateCollectionAnalysis :one
 INSERT INTO collection_analyses (snapshot_id, type, result)
 VALUES ($1, $2, $3)
-RETURNING id, type, result, created_at
+RETURNING id, snapshot_id, type, result, created_at
 `
 
 type CreateCollectionAnalysisParams struct {
@@ -25,18 +24,12 @@ type CreateCollectionAnalysisParams struct {
 	Result     json.RawMessage
 }
 
-type CreateCollectionAnalysisRow struct {
-	ID        uuid.UUID
-	Type      AnalysisType
-	Result    json.RawMessage
-	CreatedAt time.Time
-}
-
-func (q *Queries) CreateCollectionAnalysis(ctx context.Context, arg CreateCollectionAnalysisParams) (CreateCollectionAnalysisRow, error) {
+func (q *Queries) CreateCollectionAnalysis(ctx context.Context, arg CreateCollectionAnalysisParams) (CollectionAnalysis, error) {
 	row := q.db.QueryRowContext(ctx, createCollectionAnalysis, arg.SnapshotID, arg.Type, arg.Result)
-	var i CreateCollectionAnalysisRow
+	var i CollectionAnalysis
 	err := row.Scan(
 		&i.ID,
+		&i.SnapshotID,
 		&i.Type,
 		&i.Result,
 		&i.CreatedAt,
@@ -67,35 +60,44 @@ func (q *Queries) CreateCollectionSnapshot(ctx context.Context, arg CreateCollec
 	return i, err
 }
 
+const getAnalysis = `-- name: GetAnalysis :one
+SELECT id, snapshot_id, type, result, created_at FROM collection_analyses
+WHERE id = $1
+`
+
+func (q *Queries) GetAnalysis(ctx context.Context, id uuid.UUID) (CollectionAnalysis, error) {
+	row := q.db.QueryRowContext(ctx, getAnalysis, id)
+	var i CollectionAnalysis
+	err := row.Scan(
+		&i.ID,
+		&i.SnapshotID,
+		&i.Type,
+		&i.Result,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getCollectionAnalysesByCollection = `-- name: GetCollectionAnalysesByCollection :many
-SELECT a.id,
-       a.type,
-       a.result,
-       a.created_at
+SELECT a.id, a.snapshot_id, a.type, a.result, a.created_at
 FROM collection_analyses a
 JOIN collection_snapshots s ON s.id = a.snapshot_id
 WHERE s.collection_id = $1
 ORDER BY a.created_at DESC
 `
 
-type GetCollectionAnalysesByCollectionRow struct {
-	ID        uuid.UUID
-	Type      AnalysisType
-	Result    json.RawMessage
-	CreatedAt time.Time
-}
-
-func (q *Queries) GetCollectionAnalysesByCollection(ctx context.Context, collectionID uuid.UUID) ([]GetCollectionAnalysesByCollectionRow, error) {
+func (q *Queries) GetCollectionAnalysesByCollection(ctx context.Context, collectionID uuid.UUID) ([]CollectionAnalysis, error) {
 	rows, err := q.db.QueryContext(ctx, getCollectionAnalysesByCollection, collectionID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetCollectionAnalysesByCollectionRow
+	var items []CollectionAnalysis
 	for rows.Next() {
-		var i GetCollectionAnalysesByCollectionRow
+		var i CollectionAnalysis
 		if err := rows.Scan(
 			&i.ID,
+			&i.SnapshotID,
 			&i.Type,
 			&i.Result,
 			&i.CreatedAt,

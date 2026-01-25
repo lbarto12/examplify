@@ -1,8 +1,8 @@
 import { createApiClient } from "../genapi/sessions";
-import { PUBLIC_API_BASE_PRIVATE } from '$env/static/public';
+import { PUBLIC_API_BASE_PUBLIC } from '$env/static/public';
 import authPlugin from "./utils/authPlugin";
 
-let client = createApiClient(PUBLIC_API_BASE_PRIVATE, {});
+let client = createApiClient(PUBLIC_API_BASE_PUBLIC, {});
 
 export function getClient() {
   client.use(authPlugin);

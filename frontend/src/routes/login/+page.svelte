@@ -1,75 +1,88 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { getClient } from '$lib/apis/sessions.svelte';
-  
-    let email = $state("");
-    let password = $state("");
 
-    async function handleLogin() {
-      const sessionAPI = getClient();
+	let email = $state("");
+	let password = $state("");
+	let error: string | null = null;
+	let loading = false;
 
-      const { token } = await sessionAPI.signIn({ 
-        email: email,
-        password: password,
-      });
+	async function handleLogin() {
+		error = null;
+		loading = true;
+		const sessionAPI = getClient();
 
-      await fetch("/actions/set-cookie", {
-        method: "POST",
-        body: JSON.stringify({
-          key: "auth",
-          value: token,
-        }),
-      });
+		try {
+			const { token } = await sessionAPI.signIn({ 
+				email: email,
+				password: password,
+			});
 
-      await goto("/dashboard");
-    }
-  </script>
-  
-  <div class="flex flex-col items-center justify-center min-h-[70vh] px-4">
-    <div class="w-full max-w-sm">
-      
-      <header class="mb-8 text-center">
-        <h1 class="text-3xl font-black uppercase tracking-tighter">Access System</h1>
-        <p class="text-xs font-mono opacity-50 uppercase mt-2">Education Interface v1.0</p>
-      </header>
-  
-      <div class="space-y-6">
-        <div class="form-control w-full">
-          <label class="label py-1">
-            <span class="label-text text-[10px] font-bold uppercase tracking-widest">Identification</span>
-          </label>
-          <input 
-            type="text" 
-            bind:value={email}
-            placeholder="ENTER USERNAME" 
-            class="input input-bordered w-full rounded-none border-black border-2 focus:outline-none placeholder:opacity-30 text-sm"
-          />
-        </div>
-  
-        <div class="form-control w-full">
-          <label class="label py-1">
-            <span class="label-text text-[10px] font-bold uppercase tracking-widest">Security Token</span>
-          </label>
-          <input 
-            type="password" 
-            bind:value={password}
-            placeholder="••••••••" 
-            class="input input-bordered w-full rounded-none border-black border-2 focus:outline-none placeholder:opacity-30 text-sm"
-          />
-        </div>
-  
-        <button 
-          class="btn btn-primary w-full rounded-none border-2 border-black font-black uppercase tracking-widest mt-4 hover:bg-black hover:text-white transition-colors"
-          onclick={handleLogin}
-        >
-          Authenticate
-        </button>
-      </div>
-  
-      <footer class="mt-12 border-t border-black/10 pt-4">
-        <p class="text-[9px] font-mono text-center opacity-40 uppercase">
-          Secure Terminal / Authorized Personnel Only
-        </p>
-      </footer>
-    </div>
-  </div>
+			await fetch("/actions/set-cookie", {
+				method: "POST",
+				body: JSON.stringify({
+					key: "auth",
+					value: token,
+				}),
+			});
+
+			await goto("/dashboard");
+		} catch (e: any) {
+			error = e?.message || "Failed to sign in";
+		} finally {
+			loading = false;
+		}
+	}
+</script>
+
+<div class="min-h-screen flex items-center justify-center bg-base-200">
+	<div class="card w-full max-w-sm shadow-xl bg-base-100 p-6">
+		<h2 class="text-2xl font-bold text-center mb-6">Sign In</h2>
+
+		{#if error}
+			<div class="alert alert-error mb-4">
+				<span>{error}</span>
+			</div>
+		{/if}
+
+		<form class="form-control space-y-4" on:submit|preventDefault={handleLogin}>
+			<label class="label">
+				<span class="label-text">Email</span>
+			</label>
+			<input
+				type="email"
+				bind:value={email}
+				placeholder="you@example.com"
+				class="input input-bordered w-full"
+				required
+			/>
+
+			<label class="label">
+				<span class="label-text">Password</span>
+			</label>
+			<input
+				type="password"
+				bind:value={password}
+				placeholder="••••••••"
+				class="input input-bordered w-full"
+				required
+			/>
+
+			<label class="label justify-end">
+				<a href="/forgot-password" class="link link-hover text-sm">Forgot password?</a>
+			</label>
+
+			<button type="submit" class="btn btn-primary w-full" disabled={loading}>
+				{#if loading}
+					<span class="loading loading-spinner loading-sm"></span> Signing In...
+				{:else}
+					Sign In
+				{/if}
+			</button>
+		</form>
+
+		<p class="text-center mt-4 text-sm">
+			New here? <a href="/signup" class="link link-primary">Create an account</a>
+		</p>
+	</div>
+</div>

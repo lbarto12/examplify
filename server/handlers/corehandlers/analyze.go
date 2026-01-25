@@ -1,7 +1,6 @@
 package corehandlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"server/api/apirequests"
 	"server/api/apiresponses"
@@ -40,8 +39,11 @@ func (h Handler) AnalyzeCollection(w http.ResponseWriter, r *http.Request, id op
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(analysis)
+	apiresponses.Success(w, gencore.CollectionAnalysis{
+		Id:     analysis.ID,
+		Result: string(analysis.Result),
+		Type:   gencore.CollectionAnalysisType(analysis.Type),
+	})
 }
 
 func (handler Handler) GetCollectionAnalyses(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
@@ -64,6 +66,33 @@ func (handler Handler) GetCollectionAnalyses(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(analyses)
+	result := gencore.CollectionAnalyses{}
+	for _, i := range analyses {
+		result = append(result, gencore.CollectionAnalysis{
+			Id:     i.ID,
+			Type:   gencore.CollectionAnalysisType(i.Type),
+			Result: string(i.Result),
+		})
+	}
+
+	apiresponses.Success(w, result)
+}
+
+func (handler Handler) GetAnalysis(w http.ResponseWriter, r *http.Request, id openapi_types.UUID, analysisID openapi_types.UUID) {
+	qtx := sqlgen.New(handler.Services.Postgres)
+
+	analysis, err := qtx.GetAnalysis(r.Context(), analysisID)
+	if err != nil {
+		log.Error(err)
+		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+
+	result := gencore.CollectionAnalysis{
+		Id:     analysis.ID,
+		Result: string(analysis.Result),
+		Type:   gencore.CollectionAnalysisType(analysis.Type),
+	}
+
+	apiresponses.Success(w, result)
 }

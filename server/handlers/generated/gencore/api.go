@@ -6,7 +6,6 @@ package gencore
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/oapi-codegen/runtime"
@@ -50,17 +49,22 @@ type CollectionAnalyses = []CollectionAnalysis
 
 // CollectionAnalysis defines model for CollectionAnalysis.
 type CollectionAnalysis struct {
-	CreatedAt time.Time              `json:"createdAt"`
-	Id        openapi_types.UUID     `json:"id"`
-	Result    map[string]interface{} `json:"result"`
-	Type      CollectionAnalysisType `json:"type"`
+	Id     openapi_types.UUID     `json:"id"`
+	Result string                 `json:"result"`
+	Type   CollectionAnalysisType `json:"type"`
 }
 
 // CollectionAnalysisType defines model for CollectionAnalysis.Type.
 type CollectionAnalysisType string
 
+// CollectionNames defines model for CollectionNames.
+type CollectionNames = []Collection
+
 // Collections defines model for Collections.
 type Collections = []Collection
+
+// CourseNames defines model for CourseNames.
+type CourseNames = []string
 
 // Document defines model for Document.
 type Document struct {
@@ -113,12 +117,21 @@ type ServerInterface interface {
 	// Retrieve analyses for a collection
 	// (GET /core/collection/{id}/analyses)
 	GetCollectionAnalyses(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Retrieve and analysis
+	// (GET /core/collection/{id}/analysis/{analysisID})
+	GetAnalysis(w http.ResponseWriter, r *http.Request, id openapi_types.UUID, analysisID openapi_types.UUID)
 	// Run an AI analysis on a collection
 	// (POST /core/collection/{id}/analyze)
 	AnalyzeCollection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
 
 	// (GET /core/collections/{courseID}/{type})
 	FilterCollections(w http.ResponseWriter, r *http.Request, courseID string, pType string)
+
+	// (GET /core/course/{courseID}/collections)
+	GetCourseCollections(w http.ResponseWriter, r *http.Request, courseID string)
+
+	// (GET /core/courses)
+	GetCourses(w http.ResponseWriter, r *http.Request)
 
 	// (POST /core/document)
 	UploadFile(w http.ResponseWriter, r *http.Request)
@@ -147,6 +160,12 @@ func (_ Unimplemented) GetCollectionAnalyses(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Retrieve and analysis
+// (GET /core/collection/{id}/analysis/{analysisID})
+func (_ Unimplemented) GetAnalysis(w http.ResponseWriter, r *http.Request, id openapi_types.UUID, analysisID openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // Run an AI analysis on a collection
 // (POST /core/collection/{id}/analyze)
 func (_ Unimplemented) AnalyzeCollection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
@@ -155,6 +174,16 @@ func (_ Unimplemented) AnalyzeCollection(w http.ResponseWriter, r *http.Request,
 
 // (GET /core/collections/{courseID}/{type})
 func (_ Unimplemented) FilterCollections(w http.ResponseWriter, r *http.Request, courseID string, pType string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (GET /core/course/{courseID}/collections)
+func (_ Unimplemented) GetCourseCollections(w http.ResponseWriter, r *http.Request, courseID string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (GET /core/courses)
+func (_ Unimplemented) GetCourses(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -241,6 +270,40 @@ func (siw *ServerInterfaceWrapper) GetCollectionAnalyses(w http.ResponseWriter, 
 	handler.ServeHTTP(w, r)
 }
 
+// GetAnalysis operation middleware
+func (siw *ServerInterfaceWrapper) GetAnalysis(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "analysisID" -------------
+	var analysisID openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "analysisID", chi.URLParam(r, "analysisID"), &analysisID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "analysisID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAnalysis(w, r, id, analysisID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // AnalyzeCollection operation middleware
 func (siw *ServerInterfaceWrapper) AnalyzeCollection(w http.ResponseWriter, r *http.Request) {
 
@@ -291,6 +354,45 @@ func (siw *ServerInterfaceWrapper) FilterCollections(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.FilterCollections(w, r, courseID, pType)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCourseCollections operation middleware
+func (siw *ServerInterfaceWrapper) GetCourseCollections(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseID" -------------
+	var courseID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseID", chi.URLParam(r, "courseID"), &courseID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCourseCollections(w, r, courseID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCourses operation middleware
+func (siw *ServerInterfaceWrapper) GetCourses(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCourses(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -462,10 +564,19 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/core/collection/{id}/analyses", wrapper.GetCollectionAnalyses)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/core/collection/{id}/analysis/{analysisID}", wrapper.GetAnalysis)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/core/collection/{id}/analyze", wrapper.AnalyzeCollection)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/core/collections/{courseID}/{type}", wrapper.FilterCollections)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/core/course/{courseID}/collections", wrapper.GetCourseCollections)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/core/courses", wrapper.GetCourses)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/core/document", wrapper.UploadFile)

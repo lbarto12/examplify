@@ -35,11 +35,12 @@ const CollectionAnalysis = z
   .object({
     id: z.string().uuid(),
     type: z.enum(["summary", "flashcards", "quiz", "deep_summary"]),
-    result: z.object({}).partial().passthrough(),
-    createdAt: z.string().datetime({ offset: true }),
+    result: z.string(),
   })
   .passthrough();
 const CollectionAnalyses = z.array(CollectionAnalysis);
+const CourseNames = z.array(z.string());
+const CollectionNames = z.array(Collection);
 
 export const schemas = {
   NewCollectionRequest,
@@ -52,6 +53,8 @@ export const schemas = {
   AnalyzeCollectionRequest,
   CollectionAnalysis,
   CollectionAnalyses,
+  CourseNames,
+  CollectionNames,
 };
 
 const endpoints = makeApi([
@@ -122,6 +125,46 @@ for the given collection.
     ],
   },
   {
+    method: "get",
+    path: "/core/collection/:id/analysis/:analysisID",
+    alias: "getAnalysis",
+    description: `Returns all AI analyses that have been generated
+for the given collection.
+`,
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+      {
+        name: "analysisID",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z
+      .object({
+        id: z.string().uuid(),
+        type: z.enum(["summary", "flashcards", "quiz", "deep_summary"]),
+        result: z.string(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 404,
+        description: `Collection not found`,
+        schema: z.void(),
+      },
+      {
+        status: 500,
+        description: `Failed to retrieve analyses`,
+        schema: z.void(),
+      },
+    ],
+  },
+  {
     method: "post",
     path: "/core/collection/:id/analyze",
     alias: "analyzeCollection",
@@ -141,7 +184,13 @@ The analysis is run on a snapshot of the collection content.
         schema: z.string().uuid(),
       },
     ],
-    response: CollectionAnalysis,
+    response: z
+      .object({
+        id: z.string().uuid(),
+        type: z.enum(["summary", "flashcards", "quiz", "deep_summary"]),
+        result: z.string(),
+      })
+      .passthrough(),
     errors: [
       {
         status: 400,
@@ -178,6 +227,27 @@ The analysis is run on a snapshot of the collection content.
       },
     ],
     response: z.array(Collection),
+  },
+  {
+    method: "get",
+    path: "/core/course/:courseID/collections",
+    alias: "getCourseCollections",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "courseID",
+        type: "Path",
+        schema: z.string(),
+      },
+    ],
+    response: z.array(Collection),
+  },
+  {
+    method: "get",
+    path: "/core/courses",
+    alias: "getCourses",
+    requestFormat: "json",
+    response: z.array(z.string()),
   },
   {
     method: "post",
