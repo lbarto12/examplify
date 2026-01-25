@@ -29,7 +29,7 @@ func (ftr ImageAnalyzer[T]) queryImageURL(ctx context.Context, request AIQueryIm
 							OfInputItemContentList: responses.ResponseInputMessageContentListParam{
 								{
 									OfInputImage: &responses.ResponseInputImageParam{
-										ImageURL: openai.String("https://docelf.com/images/hourly_invoice_template.png"),
+										ImageURL: openai.String(request.ImageURL.String()),
 									},
 								},
 							},
