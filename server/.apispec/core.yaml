@@ -6,3 +6,41 @@ info:
 servers:
   - url: /v1/private
 paths:
+
+  /core/upload-file:
+    post:
+      operationId: uploadFile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadFileRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadFileResponse'
+
+components:
+  schemas:
+
+    UploadFileRequest:
+      properties:
+        collectionID:
+          type: string
+          format: uuid
+        mimeType:
+          type: string
+      required:
+        - collectionID
+        - mimeType
+    
+    UploadFileResponse:
+      properties:
+        uploadURL:
+          type: string
+          format: UploadFileRequest
+      required:
+        - uploadURL

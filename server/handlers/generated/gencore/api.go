@@ -8,15 +8,38 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// UploadFileRequest defines model for UploadFileRequest.
+type UploadFileRequest struct {
+	CollectionID openapi_types.UUID `json:"collectionID"`
+	MimeType     string             `json:"mimeType"`
+}
+
+// UploadFileResponse defines model for UploadFileResponse.
+type UploadFileResponse struct {
+	UploadURL string `json:"uploadURL"`
+}
+
+// UploadFileJSONRequestBody defines body for UploadFile for application/json ContentType.
+type UploadFileJSONRequestBody = UploadFileRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+
+	// (POST /core/upload-file)
+	UploadFile(w http.ResponseWriter, r *http.Request)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// (POST /core/upload-file)
+func (_ Unimplemented) UploadFile(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
@@ -26,6 +49,20 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// UploadFile operation middleware
+func (siw *ServerInterfaceWrapper) UploadFile(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadFile(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 type UnescapedCookieParamError struct {
 	ParamName string
@@ -134,6 +171,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	}
+	wrapper := ServerInterfaceWrapper{
+		Handler:            si,
+		HandlerMiddlewares: options.Middlewares,
+		ErrorHandlerFunc:   options.ErrorHandlerFunc,
+	}
+
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/core/upload-file", wrapper.UploadFile)
+	})
 
 	return r
 }
