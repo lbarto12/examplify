@@ -28,6 +28,7 @@ const Document = z
     downloadURL: z.string().url(),
   })
   .passthrough();
+const Documents = z.array(Document);
 const AnalyzeCollectionRequest = z
   .object({ type: z.enum(["summary", "flashcards", "quiz", "deep_summary"]) })
   .passthrough();
@@ -50,6 +51,7 @@ export const schemas = {
   UploadFileRequest,
   UploadFileResponse,
   Document,
+  Documents,
   AnalyzeCollectionRequest,
   CollectionAnalysis,
   CollectionAnalyses,
@@ -227,6 +229,20 @@ The analysis is run on a snapshot of the collection content.
       },
     ],
     response: z.array(Collection),
+  },
+  {
+    method: "get",
+    path: "/core/collections/:id/documents",
+    alias: "getCollectionDocuments",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.array(Document),
   },
   {
     method: "get",

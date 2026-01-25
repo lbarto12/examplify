@@ -74,6 +74,9 @@ type Document struct {
 	MimeType     string             `json:"mimeType"`
 }
 
+// Documents defines model for Documents.
+type Documents = []Document
+
 // NewCollectionRequest defines model for NewCollectionRequest.
 type NewCollectionRequest struct {
 	Course string `json:"course"`
@@ -127,6 +130,9 @@ type ServerInterface interface {
 	// (GET /core/collections/{courseID}/{type})
 	FilterCollections(w http.ResponseWriter, r *http.Request, courseID string, pType string)
 
+	// (GET /core/collections/{id}/documents)
+	GetCollectionDocuments(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+
 	// (GET /core/course/{courseID}/collections)
 	GetCourseCollections(w http.ResponseWriter, r *http.Request, courseID string)
 
@@ -174,6 +180,11 @@ func (_ Unimplemented) AnalyzeCollection(w http.ResponseWriter, r *http.Request,
 
 // (GET /core/collections/{courseID}/{type})
 func (_ Unimplemented) FilterCollections(w http.ResponseWriter, r *http.Request, courseID string, pType string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (GET /core/collections/{id}/documents)
+func (_ Unimplemented) GetCollectionDocuments(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -354,6 +365,31 @@ func (siw *ServerInterfaceWrapper) FilterCollections(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.FilterCollections(w, r, courseID, pType)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCollectionDocuments operation middleware
+func (siw *ServerInterfaceWrapper) GetCollectionDocuments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCollectionDocuments(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -571,6 +607,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/core/collections/{courseID}/{type}", wrapper.FilterCollections)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/core/collections/{id}/documents", wrapper.GetCollectionDocuments)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/core/course/{courseID}/collections", wrapper.GetCourseCollections)

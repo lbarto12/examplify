@@ -158,3 +158,38 @@ func (handler Handler) FilterCollections(w http.ResponseWriter, r *http.Request,
 
 	apiresponses.Success(w, result)
 }
+
+func (handler Handler) GetCollectionDocuments(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	userID, err := apirequests.User(r)
+	if err != nil {
+		log.Error(err)
+		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		return
+	}
+
+	docs, err := handler.Core.GetCollectionDocuments(r.Context(), *userID, id)
+	if err != nil {
+		log.Error(err)
+		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
+	}
+
+	result := gencore.Documents{}
+	for _, i := range docs {
+		download, err := handler.Core.PresignedGetDocument(r.Context(), *userID, i.ID)
+		if err != nil {
+			log.Error(err)
+			apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		result = append(result, gencore.Document{
+			ID:           i.ID,
+			CollectionID: i.CollectionID,
+			MimeType:     i.MimeType,
+			DownloadURL:  download.String(),
+		})
+	}
+
+	apiresponses.Success(w, result)
+}

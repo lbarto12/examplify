@@ -19,13 +19,28 @@
 	// UI state
 	let selectedFile:
 		| { id: string; name: string; mimeType: string; url: string }
-		| null = null;
+		| null = $state(null);
 
-	let showFileModal = false;
+	let showFileModal = $state(false);
 
 	// --- Fetch stubs (you implement) ---
 	async function fetchFiles() {
-		// files = await api.getFiles(courseID, collectionID)
+		const api = getClient();
+
+		const fs = await api.getCollectionDocuments({
+			params: {
+				id: collectionID
+			}
+		});
+
+		files = fs.map((f: any) => ({
+			id: f.ID,
+			name: f.name ?? f.ID,       // Use name if available, fallback to ID
+			mimeType: f.mimeType ?? "application/octet-stream",
+			url: f.downloadURL          // presigned URL
+		}));
+
+		console.log("FF", fs);
 	}
 
 	async function fetchAnalyses() {
@@ -35,7 +50,6 @@
                 id: collectionID
             }
         });
-        console.log("in", analyses);
 	}
 
 	onMount(() => {
@@ -75,29 +89,43 @@
 	<!-- Top section -->
 	<div class="grid grid-cols-2 gap-6">
 
-		<!-- Uploaded files -->
-		<div class="card bg-base-100 shadow">
-			<div class="card-body">
-				<h2 class="card-title">Uploaded Files</h2>
+<!-- Uploaded files as grid thumbnails -->
+<div class="card bg-base-100 shadow">
+    <div class="card-body">
+        <h2 class="card-title">Uploaded Files</h2>
 
-				{#if files.length === 0}
-					<p class="text-sm opacity-70">No files uploaded yet.</p>
-				{:else}
-					<ul class="menu bg-base-100">
-						{#each files as file}
-							<li>
-								<button
-									class="text-left"
-									on:click={() => openFile(file)}
-								>
-									{file.name}
-								</button>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</div>
-		</div>
+        {#if files.length === 0}
+            <p class="text-sm opacity-70">No files uploaded yet.</p>
+        {:else}
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {#each files as file}
+                    <button
+                        class="relative w-full aspect-square overflow-hidden rounded-lg bg-base-200 hover:scale-105 transition-transform"
+                        on:click={() => openFile(file)}
+                        title="Click to preview"
+                    >
+                        {#if file.mimeType.startsWith('image/')}
+                            <img 
+                                src={file.url} 
+                                alt="Preview" 
+                                class="w-full h-full object-cover"
+                            />
+                        {:else if file.mimeType === 'application/pdf'}
+                            <div class="w-full h-full flex items-center justify-center bg-base-300 text-sm font-semibold">
+                                PDF
+                            </div>
+                        {:else}
+                            <div class="w-full h-full flex items-center justify-center bg-base-300 text-sm font-semibold">
+                                FILE
+                            </div>
+                        {/if}
+                    </button>
+                {/each}
+            </div>
+        {/if}
+    </div>
+</div>
+
 
 		<!-- Analyses recycler -->
 		<div class="card bg-base-100 shadow">
