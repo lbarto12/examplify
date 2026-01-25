@@ -2,6 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS collections (
     id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
+    creator_id UUID NOT NULL REFERENCES user_accounts(id), 
     type VARCHAR NOT NULL
 );
 

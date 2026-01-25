@@ -11,14 +11,14 @@ import (
 )
 
 type core_interface interface {
-	CreateCollection(ctx context.Context, collectionType string) (*Collection, error)
-	GetCollection(ctx context.Context, id uuid.UUID) (*Collection, error)
+	CreateCollection(ctx context.Context, userID uuid.UUID, collectionType string) (*Collection, error)
+	GetCollection(ctx context.Context, userID uuid.UUID, id uuid.UUID) (*Collection, error)
 
-	CreateDocument(ctx context.Context, doc Document) (*url.URL, error) // awful code, presigned upload URL returned
-	GetDocument(ctx context.Context, id uuid.UUID) (*Document, error)
-	PresignedGetDocument(ctx context.Context, id uuid.UUID) (*url.URL, error)
+	CreateDocument(ctx context.Context, userID uuid.UUID, doc Document) (*url.URL, error) // awful code, presigned upload URL returned
+	GetDocument(ctx context.Context, userID uuid.UUID, id uuid.UUID) (*Document, error)
+	PresignedGetDocument(ctx context.Context, userID uuid.UUID, id uuid.UUID) (*url.URL, error)
 
-	GetCollectionDocuments(ctx context.Context, collectionID uuid.UUID) ([]Document, error)
+	GetCollectionDocuments(ctx context.Context, userID uuid.UUID, collectionID uuid.UUID) ([]Document, error)
 }
 
 type Core struct {

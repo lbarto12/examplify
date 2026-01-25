@@ -12,21 +12,30 @@ import (
 )
 
 const createCollection = `-- name: CreateCollection :one
-INSERT INTO collections (type)
-VALUES ($1)
-RETURNING id, type
+INSERT INTO collections (type, creator_id)
+VALUES ($1, $2) -- force creator_id to match authenticated user
+RETURNING id, creator_id, type
 `
 
-func (q *Queries) CreateCollection(ctx context.Context, type_ string) (Collection, error) {
-	row := q.db.QueryRowContext(ctx, createCollection, type_)
+type CreateCollectionParams struct {
+	Type   string
+	UserID uuid.UUID
+}
+
+// The user creating a collection must be the creator themselves (creator_id = @user_id)
+func (q *Queries) CreateCollection(ctx context.Context, arg CreateCollectionParams) (Collection, error) {
+	row := q.db.QueryRowContext(ctx, createCollection, arg.Type, arg.UserID)
 	var i Collection
-	err := row.Scan(&i.ID, &i.Type)
+	err := row.Scan(&i.ID, &i.CreatorID, &i.Type)
 	return i, err
 }
 
 const createDocument = `-- name: CreateDocument :one
 INSERT INTO documents (id, collection_id, mime_type, s3_location)
-VALUES ($1, $2, $3, $4)
+SELECT $1, $2, $3, $4
+FROM collections c
+WHERE c.id = $2
+  AND c.creator_id = $5
 RETURNING id, collection_id, mime_type, s3_location
 `
 
@@ -35,14 +44,17 @@ type CreateDocumentParams struct {
 	CollectionID uuid.UUID
 	MimeType     string
 	S3Location   string
+	UserID       uuid.UUID
 }
 
+// Only allow creating a document in a collection the user owns
 func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) (Document, error) {
 	row := q.db.QueryRowContext(ctx, createDocument,
 		arg.ID,
 		arg.CollectionID,
 		arg.MimeType,
 		arg.S3Location,
+		arg.UserID,
 	)
 	var i Document
 	err := row.Scan(
@@ -55,24 +67,39 @@ func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) 
 }
 
 const getCollection = `-- name: GetCollection :one
-SELECT id, type FROM collections
+SELECT id, creator_id, type
+FROM collections
 WHERE id = $1
+  AND creator_id = $2
 `
 
-func (q *Queries) GetCollection(ctx context.Context, id uuid.UUID) (Collection, error) {
-	row := q.db.QueryRowContext(ctx, getCollection, id)
+type GetCollectionParams struct {
+	ID     uuid.UUID
+	UserID uuid.UUID
+}
+
+func (q *Queries) GetCollection(ctx context.Context, arg GetCollectionParams) (Collection, error) {
+	row := q.db.QueryRowContext(ctx, getCollection, arg.ID, arg.UserID)
 	var i Collection
-	err := row.Scan(&i.ID, &i.Type)
+	err := row.Scan(&i.ID, &i.CreatorID, &i.Type)
 	return i, err
 }
 
 const getCollectionDocuments = `-- name: GetCollectionDocuments :many
-SELECT id, collection_id, mime_type, s3_location FROM documents
-WHERE collection_id = $1
+SELECT d.id, d.collection_id, d.mime_type, d.s3_location
+FROM documents d
+JOIN collections c ON d.collection_id = c.id
+WHERE d.collection_id = $1
+  AND c.creator_id = $2
 `
 
-func (q *Queries) GetCollectionDocuments(ctx context.Context, collectionID uuid.UUID) ([]Document, error) {
-	rows, err := q.db.QueryContext(ctx, getCollectionDocuments, collectionID)
+type GetCollectionDocumentsParams struct {
+	CollectionID uuid.UUID
+	UserID       uuid.UUID
+}
+
+func (q *Queries) GetCollectionDocuments(ctx context.Context, arg GetCollectionDocumentsParams) ([]Document, error) {
+	rows, err := q.db.QueryContext(ctx, getCollectionDocuments, arg.CollectionID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -100,12 +127,20 @@ func (q *Queries) GetCollectionDocuments(ctx context.Context, collectionID uuid.
 }
 
 const getDocument = `-- name: GetDocument :one
-SELECT id, collection_id, mime_type, s3_location FROM documents
-WHERE id = $1
+SELECT d.id, d.collection_id, d.mime_type, d.s3_location
+FROM documents d
+JOIN collections c ON d.collection_id = c.id
+WHERE d.id = $1
+  AND c.creator_id = $2
 `
 
-func (q *Queries) GetDocument(ctx context.Context, id uuid.UUID) (Document, error) {
-	row := q.db.QueryRowContext(ctx, getDocument, id)
+type GetDocumentParams struct {
+	ID     uuid.UUID
+	UserID uuid.UUID
+}
+
+func (q *Queries) GetDocument(ctx context.Context, arg GetDocumentParams) (Document, error) {
+	row := q.db.QueryRowContext(ctx, getDocument, arg.ID, arg.UserID)
 	var i Document
 	err := row.Scan(
 		&i.ID,

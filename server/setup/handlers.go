@@ -4,6 +4,8 @@ import (
 	"log"
 	"server/api/serviceaccess"
 	"server/core"
+	"server/handlers/corehandlers"
+	"server/handlers/generated/gencore"
 	"server/handlers/generated/gensessions"
 	"server/handlers/sessionhandlers"
 
@@ -17,7 +19,7 @@ const (
 
 func Handlers(mux *chi.Mux, services *serviceaccess.Access) {
 
-	_, err := core.NewCore(services)
+	core, err := core.NewCore(services)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,4 +31,11 @@ func Handlers(mux *chi.Mux, services *serviceaccess.Access) {
 		BaseRouter: mux,
 	})
 
+	gencore.HandlerWithOptions(corehandlers.Handler{
+		Services: services,
+		Core:     core,
+	}, gencore.ChiServerOptions{
+		BaseURL:    Private,
+		BaseRouter: mux,
+	})
 }

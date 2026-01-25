@@ -11,8 +11,9 @@ import (
 )
 
 type Collection struct {
-	ID   uuid.UUID
-	Type string
+	ID        uuid.UUID
+	CreatorID uuid.UUID
+	Type      string
 }
 
 type Document struct {

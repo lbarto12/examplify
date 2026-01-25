@@ -1,4 +1,4 @@
-import { createApiClient } from "../genapi/sessions";
+import { createApiClient } from "../genapi/core";
 import { PUBLIC_API_BASE_PRIVATE } from '$env/static/public';
 import authPlugin from "./utils/authPlugin";
 
