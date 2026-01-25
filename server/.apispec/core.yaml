@@ -7,7 +7,64 @@ servers:
   - url: /v1/private
 paths:
 
-  /core/upload-file:
+  /core/collection:
+  # New collection 
+    post:
+      operationId: newCollection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewCollectionRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewCollectionResponse'
+
+  /core/collection/{id}:
+  # Get Collection
+    get:
+      operationId: getCollection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+
+  /core/collections/{courseID}/{type}:
+    get:
+      operationId: filterCollections
+      parameters:
+        - name: courseID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collections'
+
+
+  /core/document:
+  # Create document
     post:
       operationId: uploadFile
       requestBody:
@@ -22,6 +79,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UploadFileResponse'
+
+  /core/document/{id}:
+  # Get Document
+    get:
+      operationId: getDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
 
 components:
   schemas:
@@ -44,3 +119,68 @@ components:
           format: UploadFileRequest
       required:
         - uploadURL
+    
+
+    NewCollectionRequest:
+      properties:
+        title:
+          type: string
+        course:
+          type: string
+        type:
+          type: string
+      required:
+        - title
+        - course
+        - type
+
+    NewCollectionResponse:
+      properties:
+        collectionID:
+          type: string
+          format: uuid
+      required:
+        - collectionID
+
+    Collection:
+      properties:
+        ID:
+          type: string
+          format: uuid
+        title:
+          type: string
+        course:
+          type: string
+        type:
+          type: string
+      required:
+        - ID
+        - title
+        - course  
+        - type
+    
+    Collections:
+      type: array
+      items:
+        $ref: '#/components/schemas/Collection'
+
+    Document:
+      properties:
+        ID:
+          type: string
+          format: uuid
+        collectionID:
+          type: string
+          format: uuid
+        mimeType:
+          type: string
+        downloadURL:
+          type: string
+          format: uri
+      required:
+        - ID
+        - collectionID
+        - mimeType
+        - downloadURL
+        
+

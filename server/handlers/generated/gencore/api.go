@@ -8,8 +8,40 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// Collection defines model for Collection.
+type Collection struct {
+	ID     openapi_types.UUID `json:"ID"`
+	Course string             `json:"course"`
+	Title  string             `json:"title"`
+	Type   string             `json:"type"`
+}
+
+// Collections defines model for Collections.
+type Collections = []Collection
+
+// Document defines model for Document.
+type Document struct {
+	ID           openapi_types.UUID `json:"ID"`
+	CollectionID openapi_types.UUID `json:"collectionID"`
+	DownloadURL  string             `json:"downloadURL"`
+	MimeType     string             `json:"mimeType"`
+}
+
+// NewCollectionRequest defines model for NewCollectionRequest.
+type NewCollectionRequest struct {
+	Course string `json:"course"`
+	Title  string `json:"title"`
+	Type   string `json:"type"`
+}
+
+// NewCollectionResponse defines model for NewCollectionResponse.
+type NewCollectionResponse struct {
+	CollectionID openapi_types.UUID `json:"collectionID"`
+}
 
 // UploadFileRequest defines model for UploadFileRequest.
 type UploadFileRequest struct {
@@ -22,22 +54,57 @@ type UploadFileResponse struct {
 	UploadURL string `json:"uploadURL"`
 }
 
+// NewCollectionJSONRequestBody defines body for NewCollection for application/json ContentType.
+type NewCollectionJSONRequestBody = NewCollectionRequest
+
 // UploadFileJSONRequestBody defines body for UploadFile for application/json ContentType.
 type UploadFileJSONRequestBody = UploadFileRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (POST /core/upload-file)
+	// (POST /core/collection)
+	NewCollection(w http.ResponseWriter, r *http.Request)
+
+	// (GET /core/collection/{id})
+	GetCollection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+
+	// (GET /core/collections/{courseID}/{type})
+	FilterCollections(w http.ResponseWriter, r *http.Request, courseID string, pType string)
+
+	// (POST /core/document)
 	UploadFile(w http.ResponseWriter, r *http.Request)
+
+	// (GET /core/document/{id})
+	GetDocument(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
 
-// (POST /core/upload-file)
+// (POST /core/collection)
+func (_ Unimplemented) NewCollection(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (GET /core/collection/{id})
+func (_ Unimplemented) GetCollection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (GET /core/collections/{courseID}/{type})
+func (_ Unimplemented) FilterCollections(w http.ResponseWriter, r *http.Request, courseID string, pType string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (POST /core/document)
 func (_ Unimplemented) UploadFile(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (GET /core/document/{id})
+func (_ Unimplemented) GetDocument(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -50,11 +117,109 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
+// NewCollection operation middleware
+func (siw *ServerInterfaceWrapper) NewCollection(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.NewCollection(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCollection operation middleware
+func (siw *ServerInterfaceWrapper) GetCollection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCollection(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// FilterCollections operation middleware
+func (siw *ServerInterfaceWrapper) FilterCollections(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "courseID" -------------
+	var courseID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "courseID", chi.URLParam(r, "courseID"), &courseID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "courseID", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "type" -------------
+	var pType string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "type", chi.URLParam(r, "type"), &pType, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.FilterCollections(w, r, courseID, pType)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // UploadFile operation middleware
 func (siw *ServerInterfaceWrapper) UploadFile(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UploadFile(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDocument operation middleware
+func (siw *ServerInterfaceWrapper) GetDocument(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDocument(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -178,7 +343,19 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/core/upload-file", wrapper.UploadFile)
+		r.Post(options.BaseURL+"/core/collection", wrapper.NewCollection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/core/collection/{id}", wrapper.GetCollection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/core/collections/{courseID}/{type}", wrapper.FilterCollections)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/core/document", wrapper.UploadFile)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/core/document/{id}", wrapper.GetDocument)
 	})
 
 	return r

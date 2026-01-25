@@ -8,20 +8,24 @@ import (
 	"github.com/google/uuid"
 )
 
-func (core Core) CreateCollection(ctx context.Context, userID uuid.UUID, collectionType string) (*Collection, error) {
+func (core Core) CreateCollection(ctx context.Context, userID uuid.UUID, params Collection) (*Collection, error) {
 	qtx := sqlgen.New(core.Services.Postgres)
 
 	collection, err := qtx.CreateCollection(ctx, sqlgen.CreateCollectionParams{
 		UserID: userID,
-		Type:   collectionType,
+		Title:  params.Title,
+		Course: params.Course,
+		Type:   params.Type,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &Collection{
-		ID:   collection.ID,
-		Type: collection.Type,
+		ID:     collection.ID,
+		Title:  collection.Title,
+		Course: collection.Course,
+		Type:   collection.Type,
 	}, nil
 }
 
@@ -37,8 +41,10 @@ func (core Core) GetCollection(ctx context.Context, userID uuid.UUID, id uuid.UU
 	}
 
 	return &Collection{
-		ID:   collection.ID,
-		Type: collection.Type,
+		ID:     collection.ID,
+		Title:  collection.Title,
+		Course: collection.Course,
+		Type:   collection.Type,
 	}, nil
 }
 
@@ -85,6 +91,7 @@ func (core Core) GetDocument(ctx context.Context, userID uuid.UUID, id uuid.UUID
 	return &Document{
 		ID:           document.ID,
 		CollectionID: document.CollectionID,
+		Title:        document.Title,
 		MimeType:     document.MimeType,
 		S3Location:   document.S3Location,
 	}, nil
@@ -126,6 +133,7 @@ func (core Core) GetCollectionDocuments(ctx context.Context, userID uuid.UUID, c
 		result = append(result, Document{
 			ID:           doc.ID,
 			CollectionID: doc.CollectionID,
+			Title:        doc.Title,
 			MimeType:     doc.MimeType,
 			S3Location:   doc.S3Location,
 		})

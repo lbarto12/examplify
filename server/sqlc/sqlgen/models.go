@@ -13,12 +13,15 @@ import (
 type Collection struct {
 	ID        uuid.UUID
 	CreatorID uuid.UUID
+	Course    string
+	Title     string
 	Type      string
 }
 
 type Document struct {
 	ID           uuid.UUID
 	CollectionID uuid.UUID
+	Title        string
 	MimeType     string
 	S3Location   string
 }

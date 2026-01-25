@@ -2,13 +2,16 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS collections (
     id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
-    creator_id UUID NOT NULL REFERENCES user_accounts(id), 
+    creator_id UUID NOT NULL REFERENCES user_accounts(id),
+    course VARCHAR NOT NULL,
+    title VARCHAR NOT NULL,
     type VARCHAR NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS documents (
     id UUID PRIMARY KEY NOT NULL, -- must be generated server-side
     collection_id UUID NOT NULL REFERENCES collections(id),
+    title VARCHAR NOT NULL,
     mime_type VARCHAR NOT NULL,
     s3_location VARCHAR NOT NULL
 );

@@ -11,7 +11,7 @@ import (
 )
 
 type core_interface interface {
-	CreateCollection(ctx context.Context, userID uuid.UUID, collectionType string) (*Collection, error)
+	CreateCollection(ctx context.Context, userID uuid.UUID, params Collection) (*Collection, error)
 	GetCollection(ctx context.Context, userID uuid.UUID, id uuid.UUID) (*Collection, error)
 
 	CreateDocument(ctx context.Context, userID uuid.UUID, doc Document) (*url.URL, error) // awful code, presigned upload URL returned

@@ -12,31 +12,44 @@ import (
 )
 
 const createCollection = `-- name: CreateCollection :one
-INSERT INTO collections (type, creator_id)
-VALUES ($1, $2) -- force creator_id to match authenticated user
-RETURNING id, creator_id, type
+INSERT INTO collections (type, creator_id, title, course)
+VALUES ($1, $2, $3, $4) -- force creator_id to match authenticated user
+RETURNING id, creator_id, course, title, type
 `
 
 type CreateCollectionParams struct {
 	Type   string
 	UserID uuid.UUID
+	Title  string
+	Course string
 }
 
 // The user creating a collection must be the creator themselves (creator_id = @user_id)
 func (q *Queries) CreateCollection(ctx context.Context, arg CreateCollectionParams) (Collection, error) {
-	row := q.db.QueryRowContext(ctx, createCollection, arg.Type, arg.UserID)
+	row := q.db.QueryRowContext(ctx, createCollection,
+		arg.Type,
+		arg.UserID,
+		arg.Title,
+		arg.Course,
+	)
 	var i Collection
-	err := row.Scan(&i.ID, &i.CreatorID, &i.Type)
+	err := row.Scan(
+		&i.ID,
+		&i.CreatorID,
+		&i.Course,
+		&i.Title,
+		&i.Type,
+	)
 	return i, err
 }
 
 const createDocument = `-- name: CreateDocument :one
-INSERT INTO documents (id, collection_id, mime_type, s3_location)
-SELECT $1, $2, $3, $4
+INSERT INTO documents (id, collection_id, mime_type, s3_location, title)
+SELECT $1, $2, $3, $4, $5
 FROM collections c
 WHERE c.id = $2
-  AND c.creator_id = $5
-RETURNING id, collection_id, mime_type, s3_location
+  AND c.creator_id = $6
+RETURNING id, collection_id, title, mime_type, s3_location
 `
 
 type CreateDocumentParams struct {
@@ -44,6 +57,7 @@ type CreateDocumentParams struct {
 	CollectionID uuid.UUID
 	MimeType     string
 	S3Location   string
+	Title        string
 	UserID       uuid.UUID
 }
 
@@ -54,20 +68,64 @@ func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) 
 		arg.CollectionID,
 		arg.MimeType,
 		arg.S3Location,
+		arg.Title,
 		arg.UserID,
 	)
 	var i Document
 	err := row.Scan(
 		&i.ID,
 		&i.CollectionID,
+		&i.Title,
 		&i.MimeType,
 		&i.S3Location,
 	)
 	return i, err
 }
 
+const filterCollections = `-- name: FilterCollections :many
+SELECT id, creator_id, course, title, type FROM collections
+WHERE course = $1
+AND type = $2
+AND creator_id = $3
+`
+
+type FilterCollectionsParams struct {
+	Course string
+	Type   string
+	UserID uuid.UUID
+}
+
+func (q *Queries) FilterCollections(ctx context.Context, arg FilterCollectionsParams) ([]Collection, error) {
+	rows, err := q.db.QueryContext(ctx, filterCollections, arg.Course, arg.Type, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Collection
+	for rows.Next() {
+		var i Collection
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatorID,
+			&i.Course,
+			&i.Title,
+			&i.Type,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getCollection = `-- name: GetCollection :one
-SELECT id, creator_id, type
+SELECT id, creator_id, course, title, type
 FROM collections
 WHERE id = $1
   AND creator_id = $2
@@ -81,12 +139,18 @@ type GetCollectionParams struct {
 func (q *Queries) GetCollection(ctx context.Context, arg GetCollectionParams) (Collection, error) {
 	row := q.db.QueryRowContext(ctx, getCollection, arg.ID, arg.UserID)
 	var i Collection
-	err := row.Scan(&i.ID, &i.CreatorID, &i.Type)
+	err := row.Scan(
+		&i.ID,
+		&i.CreatorID,
+		&i.Course,
+		&i.Title,
+		&i.Type,
+	)
 	return i, err
 }
 
 const getCollectionDocuments = `-- name: GetCollectionDocuments :many
-SELECT d.id, d.collection_id, d.mime_type, d.s3_location
+SELECT d.id, d.collection_id, d.title, d.mime_type, d.s3_location
 FROM documents d
 JOIN collections c ON d.collection_id = c.id
 WHERE d.collection_id = $1
@@ -110,6 +174,7 @@ func (q *Queries) GetCollectionDocuments(ctx context.Context, arg GetCollectionD
 		if err := rows.Scan(
 			&i.ID,
 			&i.CollectionID,
+			&i.Title,
 			&i.MimeType,
 			&i.S3Location,
 		); err != nil {
@@ -127,7 +192,7 @@ func (q *Queries) GetCollectionDocuments(ctx context.Context, arg GetCollectionD
 }
 
 const getDocument = `-- name: GetDocument :one
-SELECT d.id, d.collection_id, d.mime_type, d.s3_location
+SELECT d.id, d.collection_id, d.title, d.mime_type, d.s3_location
 FROM documents d
 JOIN collections c ON d.collection_id = c.id
 WHERE d.id = $1
@@ -145,6 +210,7 @@ func (q *Queries) GetDocument(ctx context.Context, arg GetDocumentParams) (Docum
 	err := row.Scan(
 		&i.ID,
 		&i.CollectionID,
+		&i.Title,
 		&i.MimeType,
 		&i.S3Location,
 	)
