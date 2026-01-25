@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"server/api/serviceaccess"
 	"server/api/tools/externaltools/geminiapi"
+	"server/api/tools/externaltools/gptapi"
 	"server/api/tools/externaltools/minioapi"
 	"server/api/tools/externaltools/postgresapi"
 	"server/environment"
@@ -57,10 +58,18 @@ func NewServer(
 		return nil, err
 	}
 
+	// Init OpenAI
+	log.Println("connecting to openai...")
+	openAIClient, err := gptapi.Connect(env)
+	if err != nil {
+		return nil, err
+	}
+
 	appServices := serviceaccess.Access{
 		Postgres: postgresClient,
 		Minio:    minioClient,
 		Gemini:   geminiClient,
+		OpenAI:   openAIClient,
 	}
 
 	mux.Use(cors.Handler(*corsConfig(env)))

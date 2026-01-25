@@ -29,6 +29,9 @@ type Vars struct {
 
 	// Gemini
 	GeminiAIKey string `env:"GEMINI_API_KEY,notEmpty"`
+
+	// OpenAI
+	OpenAIKey string `env:"OPENAI_API_KEY,notEmpty"`
 }
 
 func Get() (*Vars, error) {

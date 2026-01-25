@@ -1,7 +1,9 @@
 package setup
 
 import (
+	"log"
 	"server/api/serviceaccess"
+	"server/core"
 	"server/handlers/generated/gensessions"
 	"server/handlers/sessionhandlers"
 
@@ -14,6 +16,11 @@ const (
 )
 
 func Handlers(mux *chi.Mux, services *serviceaccess.Access) {
+
+	_, err := core.NewCore(services)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	gensessions.HandlerWithOptions(sessionhandlers.Handler{
 		Services: services,
