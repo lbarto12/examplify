@@ -17,7 +17,11 @@
         </h1>
 
         <div class="grid grid-cols-2 gap-6 w-full max-w-4xl px-10">
-            <button class="btn btn-lg h-20 rounded-xl bg-[#D9D9D9] border-none text-[#4D4D4D] font-bold shadow-md hover:bg-black hover:text-white transition-all uppercase">Chapter Lectures</button>
+            <a href="/course/{data.courseId.toLowerCase()}/chapters" 
+               class="btn btn-lg h-20 rounded-xl bg-[#D9D9D9] border-none text-[#4D4D4D] font-bold shadow-md hover:bg-black hover:text-white transition-all uppercase flex items-center justify-center no-underline">
+                Chapter Lectures
+            </a>
+
             <button class="btn btn-lg h-20 rounded-xl bg-[#D9D9D9] border-none text-[#4D4D4D] font-bold shadow-md hover:bg-black hover:text-white transition-all uppercase">Summaries</button>
             <button class="btn btn-lg h-20 rounded-xl bg-[#D9D9D9] border-none text-[#4D4D4D] font-bold shadow-md hover:bg-black hover:text-white transition-all uppercase">Saved Questions</button>
             <button class="btn btn-lg h-20 rounded-xl bg-[#D9D9D9] border-none text-[#4D4D4D] font-bold shadow-md hover:bg-black hover:text-white transition-all uppercase">Flashcards</button>
