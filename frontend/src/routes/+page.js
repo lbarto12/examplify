@@ -1,17 +1,17 @@
-// src/routes/+page.js
 /** @type {import('./$types').PageLoad} */
 export function load() {
     return {
-        // FAKE (for now) Data based on sketches
+        // Mock data to be replaced by backend later
         savedCourses: [
-            { name: 'CS221' },
-            { name: 'MAT470' },
-            { name: 'PHIL101' }
+            { id: 'cs221', name: 'CS221' },
+            { id: 'mat470', name: 'MAT470' },
+            { id: 'phil101', name: 'PHIL101' }
         ],
         quickAccess: [
             { label: 'Lecture', icon: '📚' },
             { label: 'Summary', icon: '📝' },
-            { label: 'Flash Cards', icon: '📇' }
+            { label: 'Flash Cards', icon: '📇' },
+            { label: 'Quizzes', icon: '❓' }
         ]
     };
 }

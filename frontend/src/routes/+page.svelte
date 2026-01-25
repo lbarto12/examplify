@@ -23,12 +23,14 @@
 
         <div class="grid grid-cols-3 gap-8">
             {#each data.savedCourses as course}
-                <div class="aspect-square bg-black text-white flex flex-col items-center justify-center p-6 hover:bg-neutral cursor-pointer shadow-[12px_12px_0px_0px_rgba(0,0,0,0.1)] transition-all group border-2 border-black">
+                <a href="/course/{course.id}" 
+                   class="aspect-square bg-black text-white flex flex-col items-center justify-center p-6 hover:bg-neutral cursor-pointer shadow-[12px_12px_0px_0px_rgba(0,0,0,0.1)] transition-all group border-2 border-black no-underline">
                     <span class="text-2xl font-black italic tracking-tighter uppercase text-center leading-none">
                         {course.name}
                     </span>
-                </div>
+                </a>
             {/each}
+
             <button class="aspect-square border-4 border-dashed border-black/10 flex items-center justify-center hover:bg-base-200 transition-all group">
                 <span class="text-6xl font-thin opacity-20 group-hover:opacity-100">+</span>
             </button>
