@@ -5,10 +5,57 @@
 package sqlgen
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type AnalysisType string
+
+const (
+	AnalysisTypeSummary     AnalysisType = "summary"
+	AnalysisTypeFlashcards  AnalysisType = "flashcards"
+	AnalysisTypeQuiz        AnalysisType = "quiz"
+	AnalysisTypeDeepSummary AnalysisType = "deep_summary"
+)
+
+func (e *AnalysisType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AnalysisType(s)
+	case string:
+		*e = AnalysisType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AnalysisType: %T", src)
+	}
+	return nil
+}
+
+type NullAnalysisType struct {
+	AnalysisType AnalysisType
+	Valid        bool // Valid is true if AnalysisType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAnalysisType) Scan(value interface{}) error {
+	if value == nil {
+		ns.AnalysisType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AnalysisType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAnalysisType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AnalysisType), nil
+}
 
 type Collection struct {
 	ID        uuid.UUID
@@ -18,12 +65,33 @@ type Collection struct {
 	Type      string
 }
 
+type CollectionAnalysis struct {
+	ID         uuid.UUID
+	SnapshotID uuid.UUID
+	Type       AnalysisType
+	Result     json.RawMessage
+	CreatedAt  time.Time
+}
+
+type CollectionSnapshot struct {
+	ID              uuid.UUID
+	CollectionID    uuid.UUID
+	CombinedContent string
+	CreatedAt       time.Time
+}
+
 type Document struct {
 	ID           uuid.UUID
 	CollectionID uuid.UUID
 	Title        string
 	MimeType     string
 	S3Location   string
+}
+
+type DocumentExtraction struct {
+	ID         uuid.UUID
+	DocumentID uuid.UUID
+	Content    string
 }
 
 type UserAccount struct {

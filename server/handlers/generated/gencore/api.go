@@ -6,11 +6,36 @@ package gencore
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// Defines values for AnalyzeCollectionRequestType.
+const (
+	AnalyzeCollectionRequestTypeDeepSummary AnalyzeCollectionRequestType = "deep_summary"
+	AnalyzeCollectionRequestTypeFlashcards  AnalyzeCollectionRequestType = "flashcards"
+	AnalyzeCollectionRequestTypeQuiz        AnalyzeCollectionRequestType = "quiz"
+	AnalyzeCollectionRequestTypeSummary     AnalyzeCollectionRequestType = "summary"
+)
+
+// Defines values for CollectionAnalysisType.
+const (
+	CollectionAnalysisTypeDeepSummary CollectionAnalysisType = "deep_summary"
+	CollectionAnalysisTypeFlashcards  CollectionAnalysisType = "flashcards"
+	CollectionAnalysisTypeQuiz        CollectionAnalysisType = "quiz"
+	CollectionAnalysisTypeSummary     CollectionAnalysisType = "summary"
+)
+
+// AnalyzeCollectionRequest defines model for AnalyzeCollectionRequest.
+type AnalyzeCollectionRequest struct {
+	Type AnalyzeCollectionRequestType `json:"type"`
+}
+
+// AnalyzeCollectionRequestType defines model for AnalyzeCollectionRequest.Type.
+type AnalyzeCollectionRequestType string
 
 // Collection defines model for Collection.
 type Collection struct {
@@ -19,6 +44,20 @@ type Collection struct {
 	Title  string             `json:"title"`
 	Type   string             `json:"type"`
 }
+
+// CollectionAnalyses defines model for CollectionAnalyses.
+type CollectionAnalyses = []CollectionAnalysis
+
+// CollectionAnalysis defines model for CollectionAnalysis.
+type CollectionAnalysis struct {
+	CreatedAt time.Time              `json:"createdAt"`
+	Id        openapi_types.UUID     `json:"id"`
+	Result    map[string]interface{} `json:"result"`
+	Type      CollectionAnalysisType `json:"type"`
+}
+
+// CollectionAnalysisType defines model for CollectionAnalysis.Type.
+type CollectionAnalysisType string
 
 // Collections defines model for Collections.
 type Collections = []Collection
@@ -57,6 +96,9 @@ type UploadFileResponse struct {
 // NewCollectionJSONRequestBody defines body for NewCollection for application/json ContentType.
 type NewCollectionJSONRequestBody = NewCollectionRequest
 
+// AnalyzeCollectionJSONRequestBody defines body for AnalyzeCollection for application/json ContentType.
+type AnalyzeCollectionJSONRequestBody = AnalyzeCollectionRequest
+
 // UploadFileJSONRequestBody defines body for UploadFile for application/json ContentType.
 type UploadFileJSONRequestBody = UploadFileRequest
 
@@ -68,6 +110,12 @@ type ServerInterface interface {
 
 	// (GET /core/collection/{id})
 	GetCollection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Retrieve analyses for a collection
+	// (GET /core/collection/{id}/analyses)
+	GetCollectionAnalyses(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Run an AI analysis on a collection
+	// (POST /core/collection/{id}/analyze)
+	AnalyzeCollection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
 
 	// (GET /core/collections/{courseID}/{type})
 	FilterCollections(w http.ResponseWriter, r *http.Request, courseID string, pType string)
@@ -90,6 +138,18 @@ func (_ Unimplemented) NewCollection(w http.ResponseWriter, r *http.Request) {
 
 // (GET /core/collection/{id})
 func (_ Unimplemented) GetCollection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Retrieve analyses for a collection
+// (GET /core/collection/{id}/analyses)
+func (_ Unimplemented) GetCollectionAnalyses(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Run an AI analysis on a collection
+// (POST /core/collection/{id}/analyze)
+func (_ Unimplemented) AnalyzeCollection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -147,6 +207,56 @@ func (siw *ServerInterfaceWrapper) GetCollection(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetCollection(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCollectionAnalyses operation middleware
+func (siw *ServerInterfaceWrapper) GetCollectionAnalyses(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCollectionAnalyses(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AnalyzeCollection operation middleware
+func (siw *ServerInterfaceWrapper) AnalyzeCollection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AnalyzeCollection(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -347,6 +457,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/core/collection/{id}", wrapper.GetCollection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/core/collection/{id}/analyses", wrapper.GetCollectionAnalyses)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/core/collection/{id}/analyze", wrapper.AnalyzeCollection)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/core/collections/{courseID}/{type}", wrapper.FilterCollections)

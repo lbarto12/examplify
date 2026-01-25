@@ -28,6 +28,18 @@ const Document = z
     downloadURL: z.string().url(),
   })
   .passthrough();
+const AnalyzeCollectionRequest = z
+  .object({ type: z.enum(["summary", "flashcards", "quiz", "deep_summary"]) })
+  .passthrough();
+const CollectionAnalysis = z
+  .object({
+    id: z.string().uuid(),
+    type: z.enum(["summary", "flashcards", "quiz", "deep_summary"]),
+    result: z.object({}).partial().passthrough(),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .passthrough();
+const CollectionAnalyses = z.array(CollectionAnalysis);
 
 export const schemas = {
   NewCollectionRequest,
@@ -37,6 +49,9 @@ export const schemas = {
   UploadFileRequest,
   UploadFileResponse,
   Document,
+  AnalyzeCollectionRequest,
+  CollectionAnalysis,
+  CollectionAnalyses,
 };
 
 const endpoints = makeApi([
@@ -76,6 +91,74 @@ const endpoints = makeApi([
         type: z.string(),
       })
       .passthrough(),
+  },
+  {
+    method: "get",
+    path: "/core/collection/:id/analyses",
+    alias: "getCollectionAnalyses",
+    description: `Returns all AI analyses that have been generated
+for the given collection.
+`,
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.array(CollectionAnalysis),
+    errors: [
+      {
+        status: 404,
+        description: `Collection not found`,
+        schema: z.void(),
+      },
+      {
+        status: 500,
+        description: `Failed to retrieve analyses`,
+        schema: z.void(),
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/core/collection/:id/analyze",
+    alias: "analyzeCollection",
+    description: `Performs an AI analysis on all documents in a collection.
+The analysis is run on a snapshot of the collection content.
+`,
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: AnalyzeCollectionRequest,
+      },
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: CollectionAnalysis,
+    errors: [
+      {
+        status: 400,
+        description: `Invalid request`,
+        schema: z.void(),
+      },
+      {
+        status: 404,
+        description: `Collection not found`,
+        schema: z.void(),
+      },
+      {
+        status: 500,
+        description: `Analysis failed`,
+        schema: z.void(),
+      },
+    ],
   },
   {
     method: "get",

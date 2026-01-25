@@ -98,6 +98,67 @@ paths:
               schema:
                 $ref: '#/components/schemas/Document'
 
+
+  /core/collection/{id}/analyze:
+    post:
+      operationId: analyzeCollection
+      summary: Run an AI analysis on a collection
+      description: |
+        Performs an AI analysis on all documents in a collection.
+        The analysis is run on a snapshot of the collection content.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyzeCollectionRequest'
+      responses:
+        "200":
+          description: Analysis successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionAnalysis'
+        "400":
+          description: Invalid request
+        "404":
+          description: Collection not found
+        "500":
+          description: Analysis failed
+
+  /core/collection/{id}/analyses:
+    get:
+      operationId: getCollectionAnalyses
+      summary: Retrieve analyses for a collection
+      description: |
+        Returns all AI analyses that have been generated
+        for the given collection.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of analyses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionAnalyses'
+        "404":
+          description: Collection not found
+        "500":
+          description: Failed to retrieve analyses
+
 components:
   schemas:
 
@@ -182,5 +243,49 @@ components:
         - collectionID
         - mimeType
         - downloadURL
+
+    AnalyzeCollectionRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - summary
+            - flashcards
+            - quiz
+            - deep_summary
+      required:
+        - type
+
+    CollectionAnalysis:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - summary
+            - flashcards
+            - quiz
+            - deep_summary
+        result:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - result
+        - createdAt
+
+    CollectionAnalyses:
+      type: array
+      items:
+        $ref: '#/components/schemas/CollectionAnalysis'
+
         
 

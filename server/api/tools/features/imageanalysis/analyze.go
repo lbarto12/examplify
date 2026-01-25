@@ -6,11 +6,11 @@ import (
 	"net/url"
 )
 
-func (ftr ImageAnalyzer[T]) AnalyzeURL(ctx context.Context, imageURL *url.URL) (*T, error) {
+func (ftr ImageAnalyzer[T]) AnalyzeURL(ctx context.Context, kind AnalysisType, imageURL *url.URL) (*T, error) {
 	var x T
 
 	response, err := ftr.queryImageURL(ctx, AIQueryImageParams{
-		Instructions: aiChatbotAnalysisInstructions(x.Describe()),
+		Instructions: analysisInstructions(kind, x.Describe()),
 		ImageURL:     imageURL,
 	})
 	if err != nil {
@@ -23,4 +23,20 @@ func (ftr ImageAnalyzer[T]) AnalyzeURL(ctx context.Context, imageURL *url.URL) (
 	}
 
 	return &result, nil
+}
+
+func (ftr ImageAnalyzer[T]) ExtractText(
+	ctx context.Context,
+	imageURL *url.URL,
+) (string, error) {
+
+	response, err := ftr.queryImageURL(ctx, AIQueryImageParams{
+		Instructions: imageTextExtractionInstructions(),
+		ImageURL:     imageURL,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return *response, nil
 }

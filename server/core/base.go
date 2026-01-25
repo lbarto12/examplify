@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
+	"github.com/openai/openai-go/v3"
 )
 
 type core_interface interface {
@@ -52,3 +53,7 @@ func NewCore(services *serviceaccess.Access) (*Core, error) {
 
 	return intf.(*Core), nil
 }
+
+const ( // Consts
+	ChatModel = openai.ChatModelGPT5ChatLatest
+)
