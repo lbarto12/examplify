@@ -79,9 +79,7 @@ func (handler Handler) GetCollectionAnalyses(w http.ResponseWriter, r *http.Requ
 }
 
 func (handler Handler) GetAnalysis(w http.ResponseWriter, r *http.Request, id openapi_types.UUID, analysisID openapi_types.UUID) {
-	qtx := sqlgen.New(handler.Services.Postgres)
-
-	analysis, err := qtx.GetAnalysis(r.Context(), analysisID)
+	analysis, err := handler.Queries.GetAnalysis(r.Context(), analysisID)
 	if err != nil {
 		log.Error(err)
 		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)

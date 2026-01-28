@@ -2,11 +2,9 @@ package imageanalysis
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"net/url"
 
-	"github.com/minio/minio-go/v7"
 	"github.com/openai/openai-go/v3"
 )
 
@@ -22,24 +20,18 @@ type image_analyzer_interface[T describable_type] interface {
 }
 
 type ImageAnalyzer[T describable_type] struct {
-	ObjectStore *minio.Client
-	AI          *openai.Client
-	Postgres    *sql.DB
+	AI *openai.Client
 }
 
 type NewImageAnalyzerParams struct {
-	ObjectStore *minio.Client
-	AI          *openai.Client
-	Postgres    *sql.DB
+	AI *openai.Client
 }
 
 func NewImageAnalyzer[T describable_type](data NewImageAnalyzerParams) (*ImageAnalyzer[T], error) {
 
 	// Validate against interface
 	var ftr image_analyzer_interface[T] = &ImageAnalyzer[T]{
-		ObjectStore: data.ObjectStore,
-		AI:          data.AI,
-		Postgres:    data.Postgres,
+		AI: data.AI,
 	}
 	return ftr.(*ImageAnalyzer[T]), nil
 }

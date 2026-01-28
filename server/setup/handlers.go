@@ -8,6 +8,7 @@ import (
 	"server/handlers/generated/gencore"
 	"server/handlers/generated/gensessions"
 	"server/handlers/sessionhandlers"
+	"server/sqlc/sqlgen"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -24,8 +25,12 @@ func Handlers(mux *chi.Mux, services *serviceaccess.Access) {
 		log.Fatal(err)
 	}
 
+	// Create single shared database query client
+	queries := sqlgen.New(services.Postgres)
+
 	gensessions.HandlerWithOptions(sessionhandlers.Handler{
 		Services: services,
+		Queries:  queries,
 	}, gensessions.ChiServerOptions{
 		BaseURL:    Public,
 		BaseRouter: mux,
@@ -34,6 +39,7 @@ func Handlers(mux *chi.Mux, services *serviceaccess.Access) {
 	gencore.HandlerWithOptions(corehandlers.Handler{
 		Services: services,
 		Core:     core,
+		Queries:  queries,
 	}, gencore.ChiServerOptions{
 		BaseURL:    Private,
 		BaseRouter: mux,

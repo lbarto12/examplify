@@ -22,9 +22,7 @@ func (handler Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	qtx := sqlgen.New(handler.Services.Postgres)
-
-	user, err := qtx.GetUserAccountByEmail(r.Context(), string(request.Email))
+	user, err := handler.Queries.GetUserAccountByEmail(r.Context(), string(request.Email))
 	if err != nil {
 		log.Error(err)
 		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
@@ -60,8 +58,6 @@ func (handler Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	qtx := sqlgen.New(handler.Services.Postgres)
-
 	pswd, err := passwords.GenerateFromPassword(request.Password, passwords.NewDefaultPasswordGenerationOptions())
 	if err != nil {
 		log.Error(err)
@@ -69,7 +65,7 @@ func (handler Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := qtx.CreateAccount(r.Context(), sqlgen.CreateAccountParams{
+	user, err := handler.Queries.CreateAccount(r.Context(), sqlgen.CreateAccountParams{
 		UserEmail:    string(request.Email),
 		PasswordHash: pswd,
 	})

@@ -28,15 +28,21 @@ func (ftr ImageAnalyzer[T]) AnalyzeURL(ctx context.Context, kind AnalysisType, i
 func (ftr ImageAnalyzer[T]) ExtractText(
 	ctx context.Context,
 	imageURL *url.URL,
-) (string, error) {
+) (*T, error) {
+	var x T
 
 	response, err := ftr.queryImageURL(ctx, AIQueryImageParams{
-		Instructions: imageTextExtractionInstructions(),
+		Instructions: imageTextExtractionInstructions(x.Describe()),
 		ImageURL:     imageURL,
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return *response, nil
+	var result T
+	if err := json.Unmarshal([]byte(*response), &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }

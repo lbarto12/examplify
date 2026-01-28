@@ -138,9 +138,7 @@ func (handler Handler) FilterCollections(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	qtx := sqlgen.New(handler.Services.Postgres)
-
-	filtered, err := qtx.FilterCollections(r.Context(), sqlgen.FilterCollectionsParams{
+	filtered, err := handler.Queries.FilterCollections(r.Context(), sqlgen.FilterCollectionsParams{
 		UserID: *userID,
 		Course: courseID,
 		Type:   pType,

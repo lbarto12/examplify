@@ -19,9 +19,7 @@ func (handler Handler) GetCourseCollections(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	qtx := sqlgen.New(handler.Services.Postgres)
-
-	collections, err := qtx.GetCourseCollections(r.Context(), sqlgen.GetCourseCollectionsParams{
+	collections, err := handler.Queries.GetCourseCollections(r.Context(), sqlgen.GetCourseCollectionsParams{
 		UserID:   *userID,
 		CourseID: courseID,
 	})
@@ -53,9 +51,7 @@ func (handler Handler) GetCourses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	qtx := sqlgen.New(handler.Services.Postgres)
-
-	courses, err := qtx.GetCourses(r.Context(), *userID)
+	courses, err := handler.Queries.GetCourses(r.Context(), *userID)
 	if err != nil {
 		log.Error(err)
 		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)

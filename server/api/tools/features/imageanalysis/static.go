@@ -72,17 +72,20 @@ Analyze the provided material and extract its key educational content.
 	}
 }
 
-func imageTextExtractionInstructions() string {
-	return `
+func imageTextExtractionInstructions(schema string) string {
+	return fmt.Sprintf(`
 Extract all readable text from the provided image.
 
 Rules:
-- Return plain text only
 - Preserve ordering and structure where possible
 - Include headings, labels, equations, and bullet points
 - Do NOT summarize
 - Do NOT explain
 - Do NOT infer missing content
-- Do NOT return JSON
-`
+- Follow the JSON schema EXACTLY
+- Do not include markdown or newlines
+
+Schema:
+%s
+`, schema)
 }

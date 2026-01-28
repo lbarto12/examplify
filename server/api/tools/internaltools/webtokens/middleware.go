@@ -29,9 +29,10 @@ func (mw WebTokenMiddleWare) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Ignore the favicon
 	if strings.HasSuffix(path, "favicon.ico") {
 		mw.next.ServeHTTP(w, r)
+		return
 	}
 
-	// Exclude middeware from paths
+	// Exclude middleware from paths
 	if mw.config.PathPrefixExclusions != nil {
 		for _, exclusion := range mw.config.PathPrefixExclusions {
 			if strings.HasPrefix(path, exclusion) {

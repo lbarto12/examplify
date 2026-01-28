@@ -20,7 +20,7 @@ func (core Core) AnalyzeCollection(
 	kind sqlgen.AnalysisType,
 ) (*CollectionAnalysis, error) {
 
-	q := sqlgen.New(core.Services.Postgres)
+	q := core.Queries
 
 	// Auth check
 	if _, err := q.GetCollection(ctx, sqlgen.GetCollectionParams{
@@ -70,7 +70,7 @@ func (core Core) ensureExtractions(
 	collectionID uuid.UUID,
 ) error {
 
-	q := sqlgen.New(core.Services.Postgres)
+	q := core.Queries
 
 	docs, err := q.GetCollectionDocuments(ctx, sqlgen.GetCollectionDocumentsParams{
 		UserID:       userID,
@@ -89,14 +89,14 @@ func (core Core) ensureExtractions(
 			continue
 		}
 
-		text, err := core.extractDocumentContent(ctx, doc)
+		extraction, err := core.extractDocumentContent(ctx, doc)
 		if err != nil {
 			return err
 		}
 
 		if _, err := q.CreateDocumentExtraction(ctx, sqlgen.CreateDocumentExtractionParams{
 			DocumentID: doc.ID,
-			Content:    text,
+			Content:    extraction.Content,
 		}); err != nil {
 			return err
 		}
@@ -105,14 +105,21 @@ func (core Core) ensureExtractions(
 	return nil
 }
 
-type Fuck struct{}
+// DocumentTextExtraction represents the structured output from OCR/text extraction
+type DocumentTextExtraction struct {
+	Content string `json:"content"`
+}
 
-func (Fuck) Describe() string { return "" }
+func (DocumentTextExtraction) Describe() string {
+	return `{
+	"content": "string - The complete text content extracted from the document, preserving structure and ordering"
+}`
+}
 
 func (core Core) extractDocumentContent(
 	ctx context.Context,
 	doc sqlgen.Document,
-) (string, error) {
+) (*DocumentTextExtraction, error) {
 
 	url, err := core.Services.Minio.PresignedGetObject(
 		ctx,
@@ -122,14 +129,15 @@ func (core Core) extractDocumentContent(
 		nil,
 	)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	img, err := imageanalysis.NewImageAnalyzer[Fuck](imageanalysis.NewImageAnalyzerParams{
-		ObjectStore: core.Services.Minio,
-		AI:          core.Services.OpenAI,
-		Postgres:    core.Services.Postgres,
+	img, err := imageanalysis.NewImageAnalyzer[DocumentTextExtraction](imageanalysis.NewImageAnalyzerParams{
+		AI: core.Services.OpenAI,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return img.ExtractText(ctx, url)
 }
@@ -144,7 +152,7 @@ func (core Core) createSnapshot(
 	collectionID uuid.UUID,
 ) (*CollectionSnapshot, error) {
 
-	q := sqlgen.New(core.Services.Postgres)
+	q := core.Queries
 
 	extractions, err := q.GetDocumentExtractionsByCollection(ctx, collectionID)
 	if err != nil {
@@ -200,7 +208,7 @@ func (core Core) GetCollectionAnalyses(
 	collectionID uuid.UUID,
 ) ([]CollectionAnalysis, error) {
 
-	q := sqlgen.New(core.Services.Postgres)
+	q := core.Queries
 
 	if _, err := q.GetCollection(ctx, sqlgen.GetCollectionParams{
 		UserID: userID,

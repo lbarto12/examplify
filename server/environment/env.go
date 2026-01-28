@@ -8,6 +8,9 @@ type Vars struct {
 	ServerHost string `env:"SERVER_HOST,notEmpty"`
 	ServerPort string `env:"SERVER_PORT,notEmpty"`
 
+	// CORS
+	CorsAllowedOrigins string `env:"CORS_ALLOWED_ORIGINS" envDefault:"http://localhost:3000"`
+
 	// JWTs
 	JWTSecretKey string `env:"JWT_SECRET_KEY,notEmpty"`
 

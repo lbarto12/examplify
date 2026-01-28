@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"server/api/serviceaccess"
+	"server/sqlc/sqlgen"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,6 +25,7 @@ type core_interface interface {
 
 type Core struct {
 	Services *serviceaccess.Access
+	Queries  *sqlgen.Queries
 }
 
 const (
@@ -49,6 +51,7 @@ func NewCore(services *serviceaccess.Access) (*Core, error) {
 
 	var intf core_interface = &Core{
 		Services: services,
+		Queries:  sqlgen.New(services.Postgres),
 	}
 
 	return intf.(*Core), nil

@@ -9,9 +9,7 @@ import (
 )
 
 func (core Core) CreateCollection(ctx context.Context, userID uuid.UUID, params Collection) (*Collection, error) {
-	qtx := sqlgen.New(core.Services.Postgres)
-
-	collection, err := qtx.CreateCollection(ctx, sqlgen.CreateCollectionParams{
+	collection, err := core.Queries.CreateCollection(ctx, sqlgen.CreateCollectionParams{
 		UserID: userID,
 		Title:  params.Title,
 		Course: params.Course,
@@ -30,9 +28,7 @@ func (core Core) CreateCollection(ctx context.Context, userID uuid.UUID, params 
 }
 
 func (core Core) GetCollection(ctx context.Context, userID uuid.UUID, id uuid.UUID) (*Collection, error) {
-	qtx := sqlgen.New(core.Services.Postgres)
-
-	collection, err := qtx.GetCollection(ctx, sqlgen.GetCollectionParams{
+	collection, err := core.Queries.GetCollection(ctx, sqlgen.GetCollectionParams{
 		UserID: userID,
 		ID:     id,
 	})
@@ -49,11 +45,9 @@ func (core Core) GetCollection(ctx context.Context, userID uuid.UUID, id uuid.UU
 }
 
 func (core Core) CreateDocument(ctx context.Context, userID uuid.UUID, doc Document) (*url.URL, error) { // awful code, presigned upload URL returned
-	qtx := sqlgen.New(core.Services.Postgres)
-
 	fileID := uuid.New()
 
-	_, err := qtx.CreateDocument(ctx, sqlgen.CreateDocumentParams{
+	_, err := core.Queries.CreateDocument(ctx, sqlgen.CreateDocumentParams{
 		UserID:       userID,
 		ID:           fileID,
 		CollectionID: doc.CollectionID,
@@ -78,9 +72,7 @@ func (core Core) CreateDocument(ctx context.Context, userID uuid.UUID, doc Docum
 }
 
 func (core Core) GetDocument(ctx context.Context, userID uuid.UUID, id uuid.UUID) (*Document, error) {
-	qtx := sqlgen.New(core.Services.Postgres)
-
-	document, err := qtx.GetDocument(ctx, sqlgen.GetDocumentParams{
+	document, err := core.Queries.GetDocument(ctx, sqlgen.GetDocumentParams{
 		UserID: userID,
 		ID:     id,
 	})
@@ -98,9 +90,7 @@ func (core Core) GetDocument(ctx context.Context, userID uuid.UUID, id uuid.UUID
 }
 
 func (core Core) PresignedGetDocument(ctx context.Context, userID uuid.UUID, id uuid.UUID) (*url.URL, error) {
-	qtx := sqlgen.New(core.Services.Postgres)
-
-	document, err := qtx.GetDocument(ctx, sqlgen.GetDocumentParams{
+	document, err := core.Queries.GetDocument(ctx, sqlgen.GetDocumentParams{
 		UserID: userID,
 		ID:     id,
 	})
@@ -117,9 +107,7 @@ func (core Core) PresignedGetDocument(ctx context.Context, userID uuid.UUID, id 
 }
 
 func (core Core) GetCollectionDocuments(ctx context.Context, userID uuid.UUID, collectionID uuid.UUID) ([]Document, error) {
-	qtx := sqlgen.New(core.Services.Postgres)
-
-	documents, err := qtx.GetCollectionDocuments(ctx, sqlgen.GetCollectionDocumentsParams{
+	documents, err := core.Queries.GetCollectionDocuments(ctx, sqlgen.GetCollectionDocumentsParams{
 		UserID:       userID,
 		CollectionID: collectionID,
 	})
