@@ -14,14 +14,19 @@ import (
 )
 
 type core_interface interface {
+	// Collection operations
 	CreateCollection(ctx context.Context, userID uuid.UUID, params Collection) (*Collection, error)
 	GetCollection(ctx context.Context, userID uuid.UUID, id uuid.UUID) (*Collection, error)
+	GetCollectionDocuments(ctx context.Context, userID uuid.UUID, collectionID uuid.UUID) ([]Document, error)
 
-	CreateDocument(ctx context.Context, userID uuid.UUID, doc Document) (*url.URL, error) // awful code, presigned upload URL returned
+	// Document operations
+	CreateDocument(ctx context.Context, userID uuid.UUID, doc Document) (*url.URL, error)
 	GetDocument(ctx context.Context, userID uuid.UUID, id uuid.UUID) (*Document, error)
 	PresignedGetDocument(ctx context.Context, userID uuid.UUID, id uuid.UUID) (*url.URL, error)
 
-	GetCollectionDocuments(ctx context.Context, userID uuid.UUID, collectionID uuid.UUID) ([]Document, error)
+	// Analysis operations
+	AnalyzeCollection(ctx context.Context, userID uuid.UUID, collectionID uuid.UUID, kind sqlgen.AnalysisType) (*CollectionAnalysis, error)
+	GetCollectionAnalyses(ctx context.Context, userID uuid.UUID, collectionID uuid.UUID) ([]CollectionAnalysis, error)
 }
 
 type Core struct {

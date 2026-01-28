@@ -14,6 +14,7 @@ type describable_type interface {
 
 type image_analyzer_interface[T describable_type] interface {
 	AnalyzeURL(ctx context.Context, kind AnalysisType, imageURL *url.URL) (*T, error)
+	ExtractText(ctx context.Context, imageURL *url.URL) (*T, error)
 
 	// Internal
 	queryImageURL(ctx context.Context, request AIQueryImageParams) (*string, error)
