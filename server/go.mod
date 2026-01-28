@@ -16,6 +16,7 @@ require (
 	github.com/openai/openai-go/v3 v3.16.0
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/rs/cors v1.11.1
+	github.com/rs/zerolog v1.34.0
 	golang.org/x/crypto v0.46.0
 	google.golang.org/genai v1.43.0
 )

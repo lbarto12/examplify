@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"server/api/serviceaccess"
+	"server/environment"
 	"server/sqlc/sqlgen"
 	"time"
 
@@ -24,25 +25,24 @@ type core_interface interface {
 }
 
 type Core struct {
-	Services *serviceaccess.Access
-	Queries  *sqlgen.Queries
+	Services        *serviceaccess.Access
+	Queries         *sqlgen.Queries
+	UploadBucket    string
+	PresignedExpiry time.Duration
 }
 
-const (
-	UploadBucket    string        = "image-analysis-images"
-	PresignedExpiry time.Duration = time.Minute * 5
-)
-
-func NewCore(services *serviceaccess.Access) (*Core, error) {
+func NewCore(services *serviceaccess.Access, env *environment.Vars) (*Core, error) {
+	bucketName := env.UploadBucketName
+	presignedExpiry := time.Minute * time.Duration(env.PresignedExpiryMins)
 
 	// Check / Create bucket for temp assets
-	bucketExists, err := services.Minio.BucketExists(context.Background(), UploadBucket)
+	bucketExists, err := services.Minio.BucketExists(context.Background(), bucketName)
 	if err != nil {
 		return nil, err
 	}
 
 	if !bucketExists {
-		if err := services.Minio.MakeBucket(context.Background(), UploadBucket, minio.MakeBucketOptions{}); err != nil {
+		if err := services.Minio.MakeBucket(context.Background(), bucketName, minio.MakeBucketOptions{}); err != nil {
 			return nil, err
 		}
 
@@ -50,8 +50,10 @@ func NewCore(services *serviceaccess.Access) (*Core, error) {
 	}
 
 	var intf core_interface = &Core{
-		Services: services,
-		Queries:  sqlgen.New(services.Postgres),
+		Services:        services,
+		Queries:         sqlgen.New(services.Postgres),
+		UploadBucket:    bucketName,
+		PresignedExpiry: presignedExpiry,
 	}
 
 	return intf.(*Core), nil

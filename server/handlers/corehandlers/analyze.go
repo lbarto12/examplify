@@ -9,22 +9,19 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/labstack/gommon/log"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 func (h Handler) AnalyzeCollection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	userID, err := apirequests.User(r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
 		return
 	}
 
 	req, err := apirequests.Request[gencore.AnalyzeCollectionRequest](r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
 		return
 	}
 
@@ -35,7 +32,7 @@ func (h Handler) AnalyzeCollection(w http.ResponseWriter, r *http.Request, id op
 		sqlgen.AnalysisType(req.Type),
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
@@ -49,20 +46,19 @@ func (h Handler) AnalyzeCollection(w http.ResponseWriter, r *http.Request, id op
 func (handler Handler) GetCollectionAnalyses(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	userID, err := apirequests.User(r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
 		return
 	}
 
 	collectionID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		http.Error(w, "invalid collection id", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "invalid collection id", err)
 		return
 	}
 
 	analyses, err := handler.Core.GetCollectionAnalyses(r.Context(), *userID, collectionID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
@@ -81,8 +77,7 @@ func (handler Handler) GetCollectionAnalyses(w http.ResponseWriter, r *http.Requ
 func (handler Handler) GetAnalysis(w http.ResponseWriter, r *http.Request, id openapi_types.UUID, analysisID openapi_types.UUID) {
 	analysis, err := handler.Queries.GetAnalysis(r.Context(), analysisID)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 

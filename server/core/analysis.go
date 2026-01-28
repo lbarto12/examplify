@@ -123,9 +123,9 @@ func (core Core) extractDocumentContent(
 
 	url, err := core.Services.Minio.PresignedGetObject(
 		ctx,
-		UploadBucket,
+		core.UploadBucket,
 		doc.S3Location,
-		PresignedExpiry,
+		core.PresignedExpiry,
 		nil,
 	)
 	if err != nil {

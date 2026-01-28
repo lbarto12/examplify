@@ -6,16 +6,15 @@ import (
 	"server/api/apiresponses"
 	"server/handlers/generated/gencore"
 	"server/sqlc/sqlgen"
-
-	"github.com/labstack/gommon/log"
 )
 
 // (GET /core/course/{courseID}/collections)
+// TODO: Add pagination - limit/offset parameters (e.g., ?limit=50&offset=0)
+// For production, this endpoint should support pagination to handle large datasets
 func (handler Handler) GetCourseCollections(w http.ResponseWriter, r *http.Request, courseID string) {
 	userID, err := apirequests.User(r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid request", err)
 		return
 	}
 
@@ -24,8 +23,7 @@ func (handler Handler) GetCourseCollections(w http.ResponseWriter, r *http.Reque
 		CourseID: courseID,
 	})
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
@@ -43,18 +41,18 @@ func (handler Handler) GetCourseCollections(w http.ResponseWriter, r *http.Reque
 }
 
 // (GET /core/courses)
+// TODO: Add pagination - limit/offset parameters (e.g., ?limit=50&offset=0)
+// For production, this endpoint should support pagination to handle large datasets
 func (handler Handler) GetCourses(w http.ResponseWriter, r *http.Request) {
 	userID, err := apirequests.User(r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid request", err)
 		return
 	}
 
 	courses, err := handler.Queries.GetCourses(r.Context(), *userID)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 

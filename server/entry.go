@@ -4,6 +4,7 @@ import (
 	"embed"
 	"log"
 	"server/api/server"
+	"server/environment"
 	"server/setup"
 
 	"github.com/joho/godotenv"
@@ -21,9 +22,14 @@ func main() {
 		log.Fatal("No evnironment variables found")
 	}
 
+	env, err := environment.Get()
+	if err != nil {
+		log.Fatal("Failed to load environment:", err)
+	}
+
 	svr, err := server.NewServer(server.ServerOptions{
-		Host: "localhost",
-		Port: "8080",
+		Host: env.ServerHost,
+		Port: env.ServerPort,
 		Cors: nil,
 	},
 		setup.Handlers,

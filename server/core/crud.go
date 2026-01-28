@@ -60,9 +60,9 @@ func (core Core) CreateDocument(ctx context.Context, userID uuid.UUID, doc Docum
 
 	result, err := core.Services.Minio.PresignedPutObject(
 		ctx,
-		UploadBucket,
+		core.UploadBucket,
 		fileID.String(),
-		PresignedExpiry,
+		core.PresignedExpiry,
 	)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (core Core) PresignedGetDocument(ctx context.Context, userID uuid.UUID, id 
 		return nil, err
 	}
 
-	result, err := core.Services.Minio.PresignedGetObject(ctx, UploadBucket, document.S3Location, PresignedExpiry, make(url.Values))
+	result, err := core.Services.Minio.PresignedGetObject(ctx, core.UploadBucket, document.S3Location, core.PresignedExpiry, make(url.Values))
 	if err != nil {
 		return nil, err
 	}

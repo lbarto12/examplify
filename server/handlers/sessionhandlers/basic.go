@@ -6,10 +6,9 @@ import (
 	"server/api/apiresponses"
 	"server/api/tools/internaltools/passwords"
 	"server/api/tools/internaltools/webtokens"
+	"server/api/validation"
 	"server/handlers/generated/gensessions"
 	"server/sqlc/sqlgen"
-
-	"github.com/labstack/gommon/log"
 )
 
 // Signs a user in.
@@ -17,28 +16,30 @@ import (
 func (handler Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 	request, err := apirequests.Request[gensessions.SessionItem](r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
+		return
+	}
+
+	// Validate email format
+	if err := validation.ValidateEmail(string(request.Email)); err != nil {
+		apiresponses.BadRequest(w, err.Error(), err)
 		return
 	}
 
 	user, err := handler.Queries.GetUserAccountByEmail(r.Context(), string(request.Email))
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
 	if err := passwords.CompareHashAndPassword(string(request.Password), user.PasswordHash); err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
 	token, _, err := webtokens.GenerateJWT(user.ID)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
@@ -53,15 +54,25 @@ func (handler Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 func (handler Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 	request, err := apirequests.Request[gensessions.SessionItem](r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
+		return
+	}
+
+	// Validate email format
+	if err := validation.ValidateEmail(string(request.Email)); err != nil {
+		apiresponses.BadRequest(w, err.Error(), err)
+		return
+	}
+
+	// Validate password is non-empty
+	if err := validation.ValidateNonEmpty("password", request.Password); err != nil {
+		apiresponses.BadRequest(w, err.Error(), err)
 		return
 	}
 
 	pswd, err := passwords.GenerateFromPassword(request.Password, passwords.NewDefaultPasswordGenerationOptions())
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
@@ -70,15 +81,13 @@ func (handler Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 		PasswordHash: pswd,
 	})
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
 	token, _, err := webtokens.GenerateJWT(user.ID)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 

@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"server/api/serviceaccess"
-	"server/api/tools/externaltools/geminiapi"
 	"server/api/tools/externaltools/gptapi"
 	"server/api/tools/externaltools/minioapi"
 	"server/api/tools/externaltools/postgresapi"
@@ -51,12 +50,12 @@ func NewServer(
 		return nil, err
 	}
 
-	// Init Gemini
-	log.Println("connecting to gemini...")
-	geminiClient, err := geminiapi.Connect(env)
-	if err != nil {
-		return nil, err
-	}
+	// Init Gemini - Currently unused, keeping for future features
+	// log.Println("connecting to gemini...")
+	// geminiClient, err := geminiapi.Connect(env)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	// Init OpenAI
 	log.Println("connecting to openai...")
@@ -68,7 +67,7 @@ func NewServer(
 	appServices := serviceaccess.Access{
 		Postgres: postgresClient,
 		Minio:    minioClient,
-		Gemini:   geminiClient,
+		Gemini:   nil, // Disabled for now
 		OpenAI:   openAIClient,
 	}
 

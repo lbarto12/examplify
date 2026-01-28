@@ -35,6 +35,11 @@ type Vars struct {
 
 	// OpenAI
 	OpenAIKey string `env:"OPENAI_API_KEY,notEmpty"`
+
+	// Application Configuration
+	UploadBucketName    string `env:"UPLOAD_BUCKET_NAME" envDefault:"image-analysis-images"`
+	PresignedExpiryMins int    `env:"PRESIGNED_EXPIRY_MINS" envDefault:"5"`
+	OpenAIModel         string `env:"OPENAI_MODEL" envDefault:"gpt-4o"`
 }
 
 func Get() (*Vars, error) {

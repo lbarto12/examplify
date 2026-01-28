@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"server/api/apirequests"
 	"server/api/apiresponses"
+	"server/api/validation"
 	"server/core"
 	"server/handlers/generated/gencore"
 	"server/sqlc/sqlgen"
 
-	"github.com/labstack/gommon/log"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
@@ -16,15 +16,19 @@ import (
 func (handler Handler) NewCollection(w http.ResponseWriter, r *http.Request) {
 	userID, err := apirequests.User(r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
 		return
 	}
 
 	request, err := apirequests.Request[gencore.NewCollectionRequest](r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
+		return
+	}
+
+	// Validate collection title is non-empty
+	if err := validation.ValidateNonEmpty("title", request.Title); err != nil {
+		apiresponses.BadRequest(w, err.Error(), err)
 		return
 	}
 
@@ -34,8 +38,7 @@ func (handler Handler) NewCollection(w http.ResponseWriter, r *http.Request) {
 		Course: request.Course,
 	})
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
@@ -48,15 +51,19 @@ func (handler Handler) NewCollection(w http.ResponseWriter, r *http.Request) {
 func (handler Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	userID, err := apirequests.User(r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
 		return
 	}
 
 	request, err := apirequests.Request[gencore.UploadFileRequest](r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
+		return
+	}
+
+	// Validate MIME type is allowed
+	if err := validation.ValidateMimeType(request.MimeType); err != nil {
+		apiresponses.BadRequest(w, err.Error(), err)
 		return
 	}
 
@@ -65,8 +72,7 @@ func (handler Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		MimeType:     request.MimeType,
 	})
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
@@ -79,15 +85,13 @@ func (handler Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 func (handler Handler) GetCollection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	userID, err := apirequests.User(r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
 		return
 	}
 
 	collection, err := handler.Core.GetCollection(r.Context(), *userID, id)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
@@ -103,22 +107,19 @@ func (handler Handler) GetCollection(w http.ResponseWriter, r *http.Request, id 
 func (handler Handler) GetDocument(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	userID, err := apirequests.User(r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
 		return
 	}
 
 	document, err := handler.Core.GetDocument(r.Context(), *userID, id)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
 	downloadURL, err := handler.Core.PresignedGetDocument(r.Context(), *userID, document.ID)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
@@ -133,8 +134,7 @@ func (handler Handler) GetDocument(w http.ResponseWriter, r *http.Request, id op
 func (handler Handler) FilterCollections(w http.ResponseWriter, r *http.Request, courseID string, pType string) {
 	userID, err := apirequests.User(r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
 		return
 	}
 
@@ -157,18 +157,18 @@ func (handler Handler) FilterCollections(w http.ResponseWriter, r *http.Request,
 	apiresponses.Success(w, result)
 }
 
+// TODO: Add pagination - limit/offset parameters (e.g., ?limit=50&offset=0)
+// For production, this endpoint should support pagination to handle large datasets
 func (handler Handler) GetCollectionDocuments(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	userID, err := apirequests.User(r)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Invalid Request", http.StatusBadRequest)
+		apiresponses.BadRequest(w, "Invalid Request", err)
 		return
 	}
 
 	docs, err := handler.Core.GetCollectionDocuments(r.Context(), *userID, id)
 	if err != nil {
-		log.Error(err)
-		apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+		apiresponses.InternalError(w, "Internal Error", err)
 		return
 	}
 
@@ -176,8 +176,7 @@ func (handler Handler) GetCollectionDocuments(w http.ResponseWriter, r *http.Req
 	for _, i := range docs {
 		download, err := handler.Core.PresignedGetDocument(r.Context(), *userID, i.ID)
 		if err != nil {
-			log.Error(err)
-			apiresponses.Error(w, "Internal Error", http.StatusInternalServerError)
+			apiresponses.InternalError(w, "Internal Error", err)
 			return
 		}
 

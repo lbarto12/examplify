@@ -4,6 +4,7 @@ import (
 	"log"
 	"server/api/serviceaccess"
 	"server/core"
+	"server/environment"
 	"server/handlers/corehandlers"
 	"server/handlers/generated/gencore"
 	"server/handlers/generated/gensessions"
@@ -19,8 +20,12 @@ const (
 )
 
 func Handlers(mux *chi.Mux, services *serviceaccess.Access) {
+	env, err := environment.Get()
+	if err != nil {
+		log.Fatal("Failed to load environment:", err)
+	}
 
-	core, err := core.NewCore(services)
+	core, err := core.NewCore(services, env)
 	if err != nil {
 		log.Fatal(err)
 	}
