@@ -2,7 +2,7 @@ package corehandlers
 
 import (
 	"server/api/serviceaccess"
-	"server/core"
+	"server/business/core"
 	"server/sqlc/sqlgen"
 )
 

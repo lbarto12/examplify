@@ -5,7 +5,7 @@ import (
 	"server/api/apirequests"
 	"server/api/apiresponses"
 	"server/api/validation"
-	"server/core"
+	"server/business/core"
 	"server/handlers/generated/gencore"
 	"server/sqlc/sqlgen"
 

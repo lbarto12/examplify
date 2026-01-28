@@ -4,7 +4,7 @@ import (
 	"log"
 	"server/api/serviceaccess"
 	"server/api/tools/features/sessions"
-	"server/core"
+	"server/business/core"
 	"server/environment"
 	"server/handlers/corehandlers"
 	"server/handlers/generated/gencore"
