@@ -3,6 +3,7 @@ package setup
 import (
 	"log"
 	"server/api/serviceaccess"
+	"server/api/tools/features/sessions"
 	"server/core"
 	"server/environment"
 	"server/handlers/corehandlers"
@@ -33,9 +34,18 @@ func Handlers(mux *chi.Mux, services *serviceaccess.Access) {
 	// Create single shared database query client
 	queries := sqlgen.New(services.Postgres)
 
+	// Create session manager
+	sessionManager, err := sessions.NewSessionManager(sessions.NewSessionManagerParams{
+		Queries: queries,
+	})
+	if err != nil {
+		log.Fatal("Failed to create session manager:", err)
+	}
+
 	gensessions.HandlerWithOptions(sessionhandlers.Handler{
-		Services: services,
-		Queries:  queries,
+		Services:       services,
+		Queries:        queries,
+		SessionManager: sessionManager,
 	}, gensessions.ChiServerOptions{
 		BaseURL:    Public,
 		BaseRouter: mux,
