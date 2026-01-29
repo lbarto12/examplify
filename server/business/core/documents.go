@@ -72,3 +72,24 @@ func (core Core) PresignedGetDocument(ctx context.Context, userID uuid.UUID, id 
 
 	return result, nil
 }
+
+// PresignedGetThumbnail returns a presigned URL for the document's thumbnail
+// If the thumbnail doesn't exist, it generates one in the background and returns nil
+func (core Core) PresignedGetThumbnail(ctx context.Context, userID uuid.UUID, id uuid.UUID) (*url.URL, error) {
+	document, err := core.Queries.GetDocument(ctx, sqlgen.GetDocumentParams{
+		UserID: userID,
+		ID:     id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if thumbnail exists
+	if core.ThumbnailGenerator.ThumbnailExists(ctx, document.S3Location) {
+		return core.ThumbnailGenerator.GetThumbnailURL(ctx, document.S3Location)
+	}
+
+	// Generate thumbnail in background and return nil for now
+	core.ThumbnailGenerator.GenerateThumbnailAsync(document.S3Location, document.MimeType)
+	return nil, nil
+}

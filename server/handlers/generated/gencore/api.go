@@ -72,6 +72,7 @@ type Document struct {
 	CollectionID openapi_types.UUID `json:"collectionID"`
 	DownloadURL  string             `json:"downloadURL"`
 	MimeType     string             `json:"mimeType"`
+	ThumbnailURL *string            `json:"thumbnailURL,omitempty"`
 }
 
 // Documents defines model for Documents.

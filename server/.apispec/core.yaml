@@ -353,6 +353,9 @@ components:
         downloadURL:
           type: string
           format: uri
+        thumbnailURL:
+          type: string
+          format: uri
       required:
         - ID
         - collectionID

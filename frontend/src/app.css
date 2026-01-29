@@ -3,6 +3,59 @@
 /* DaisyUI Plugin */
 @plugin "daisyui";
 
+/* Light Theme */
+@plugin "daisyui/theme" {
+	name: "examplify";
+	default: true;
+	color-scheme: light;
+	--color-primary: oklch(0.65 0.25 292);
+	--color-primary-content: oklch(1 0 0);
+	--color-secondary: oklch(0.55 0.12 180);
+	--color-secondary-content: oklch(1 0 0);
+	--color-accent: oklch(0.75 0.18 70);
+	--color-accent-content: oklch(1 0 0);
+	--color-neutral: oklch(0.25 0.02 250);
+	--color-neutral-content: oklch(1 0 0);
+	--color-base-100: oklch(0.98 0.02 95);
+	--color-base-200: oklch(0.94 0.04 95);
+	--color-base-300: oklch(0.90 0.06 95);
+	--color-base-content: oklch(0.25 0.02 250);
+	--color-info: oklch(0.65 0.19 250);
+	--color-info-content: oklch(1 0 0);
+	--color-success: oklch(0.70 0.17 155);
+	--color-success-content: oklch(1 0 0);
+	--color-warning: oklch(0.75 0.18 70);
+	--color-warning-content: oklch(1 0 0);
+	--color-error: oklch(0.60 0.22 25);
+	--color-error-content: oklch(1 0 0);
+}
+
+/* Dark Theme */
+@plugin "daisyui/theme" {
+	name: "examplify-dark";
+	color-scheme: dark;
+	--color-primary: oklch(0.65 0.25 292);
+	--color-primary-content: oklch(1 0 0);
+	--color-secondary: oklch(0.55 0.12 180);
+	--color-secondary-content: oklch(1 0 0);
+	--color-accent: oklch(0.75 0.18 70);
+	--color-accent-content: oklch(1 0 0);
+	--color-neutral: oklch(0.30 0.02 250);
+	--color-neutral-content: oklch(0.95 0.01 250);
+	--color-base-100: oklch(0.25 0.04 285);
+	--color-base-200: oklch(0.20 0.05 260);
+	--color-base-300: oklch(0.15 0.04 260);
+	--color-base-content: oklch(0.92 0.01 250);
+	--color-info: oklch(0.65 0.19 250);
+	--color-info-content: oklch(1 0 0);
+	--color-success: oklch(0.70 0.17 155);
+	--color-success-content: oklch(1 0 0);
+	--color-warning: oklch(0.75 0.18 70);
+	--color-warning-content: oklch(1 0 0);
+	--color-error: oklch(0.60 0.22 25);
+	--color-error-content: oklch(1 0 0);
+}
+
 /* Animation keyframes */
 @keyframes shimmer {
 	0% {
@@ -196,49 +249,3 @@
 	}
 }
 
-/* DaisyUI Theme Overrides */
-[data-theme="examplify"] {
-	--p: 258 90% 66%;
-	--pc: 0 0% 100%;
-	--s: 173 58% 39%;
-	--sc: 0 0% 100%;
-	--a: 38 92% 50%;
-	--ac: 0 0% 100%;
-	--n: 220 18% 20%;
-	--nc: 0 0% 100%;
-	--b1: 48 96% 95%;
-	--b2: 48 97% 88%;
-	--b3: 48 96% 81%;
-	--bc: 220 18% 20%;
-	--in: 217 91% 60%;
-	--inc: 0 0% 100%;
-	--su: 158 64% 52%;
-	--suc: 0 0% 100%;
-	--wa: 38 92% 50%;
-	--wac: 0 0% 100%;
-	--er: 350 89% 60%;
-	--erc: 0 0% 100%;
-}
-
-[data-theme="examplify-dark"] {
-	--p: 258 90% 66%;
-	--pc: 0 0% 100%;
-	--s: 173 58% 39%;
-	--sc: 0 0% 100%;
-	--a: 38 92% 50%;
-	--ac: 0 0% 100%;
-	--n: 220 16% 28%;
-	--nc: 220 13% 95%;
-	--b1: 255 44% 20%;
-	--b2: 222 47% 15%;
-	--b3: 222 47% 7%;
-	--bc: 220 13% 91%;
-	--in: 217 91% 60%;
-	--inc: 0 0% 100%;
-	--su: 158 64% 52%;
-	--suc: 0 0% 100%;
-	--wa: 38 92% 50%;
-	--wac: 0 0% 100%;
-	--er: 350 89% 60%;
-	--erc: 0 0% 100%;
-}

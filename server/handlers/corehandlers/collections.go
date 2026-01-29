@@ -144,12 +144,21 @@ func (handler Handler) GetDocument(w http.ResponseWriter, r *http.Request, id op
 		return
 	}
 
-	apiresponses.Success(w, gencore.Document{
+	doc := gencore.Document{
 		ID:           document.ID,
 		CollectionID: document.CollectionID,
 		MimeType:     document.MimeType,
 		DownloadURL:  downloadURL.String(),
-	})
+	}
+
+	// Get thumbnail URL for images
+	thumbnail, err := handler.Core.PresignedGetThumbnail(r.Context(), *userID, document.ID)
+	if err == nil && thumbnail != nil {
+		thumbStr := thumbnail.String()
+		doc.ThumbnailURL = &thumbStr
+	}
+
+	apiresponses.Success(w, doc)
 }
 
 func (handler Handler) FilterCollections(w http.ResponseWriter, r *http.Request, courseID string, pType string) {
@@ -201,12 +210,21 @@ func (handler Handler) GetCollectionDocuments(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		result = append(result, gencore.Document{
+		doc := gencore.Document{
 			ID:           i.ID,
 			CollectionID: i.CollectionID,
 			MimeType:     i.MimeType,
 			DownloadURL:  download.String(),
-		})
+		}
+
+		// Get thumbnail URL for images
+		thumbnail, err := handler.Core.PresignedGetThumbnail(r.Context(), *userID, i.ID)
+		if err == nil && thumbnail != nil {
+			thumbStr := thumbnail.String()
+			doc.ThumbnailURL = &thumbStr
+		}
+
+		result = append(result, doc)
 	}
 
 	apiresponses.Success(w, result)

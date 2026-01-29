@@ -4,29 +4,30 @@
 
 	let theme = $state<'examplify' | 'examplify-dark'>('examplify');
 
+	function applyTheme(newTheme: 'examplify' | 'examplify-dark') {
+		document.documentElement.setAttribute('data-theme', newTheme);
+		localStorage.setItem('theme', newTheme);
+	}
+
 	onMount(() => {
 		// Load theme from localStorage
 		const saved = localStorage.getItem('theme');
 		if (saved === 'examplify-dark' || saved === 'examplify') {
 			theme = saved;
+			applyTheme(saved);
 		} else {
 			// Check system preference
 			const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-			theme = prefersDark ? 'examplify-dark' : 'examplify';
+			const initialTheme = prefersDark ? 'examplify-dark' : 'examplify';
+			theme = initialTheme;
+			applyTheme(initialTheme);
 		}
-		applyTheme();
 	});
 
-	function applyTheme() {
-		if (typeof window !== 'undefined') {
-			document.documentElement.setAttribute('data-theme', theme);
-			localStorage.setItem('theme', theme);
-		}
-	}
-
 	function toggleTheme() {
-		theme = theme === 'examplify' ? 'examplify-dark' : 'examplify';
-		applyTheme();
+		const newTheme = theme === 'examplify' ? 'examplify-dark' : 'examplify';
+		theme = newTheme;
+		applyTheme(newTheme);
 	}
 </script>
 

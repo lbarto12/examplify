@@ -30,8 +30,8 @@
 
 	const { courseId, collectionID } = data;
 
-	let files: { id: string; name: string; mimeType: string; url: string }[] = $state([]);
-	let selectedFile: { id: string; name: string; mimeType: string; url: string } | null = $state(null);
+	let files: { id: string; name: string; mimeType: string; url: string; thumbnailUrl?: string }[] = $state([]);
+	let selectedFile: { id: string; name: string; mimeType: string; url: string; thumbnailUrl?: string } | null = $state(null);
 	let showFileModal = $state(false);
 	let creatingAnalysis = $state<string | null>(null);
 
@@ -83,7 +83,8 @@
 				id: f.ID,
 				name: f.name ?? f.ID,
 				mimeType: f.mimeType ?? 'application/octet-stream',
-				url: f.downloadURL
+				url: f.downloadURL,
+				thumbnailUrl: f.thumbnailURL
 			}));
 		}
 	}
@@ -163,7 +164,13 @@
 						transition:fly={{ y: 20, duration: 300 }}
 					>
 						{#if file.mimeType.startsWith('image/')}
-							<img src={file.url} alt={file.name} class="w-full h-full object-cover" />
+							<img
+								src={file.thumbnailUrl || file.url}
+								alt={file.name}
+								class="w-full h-full object-cover"
+								loading="lazy"
+								decoding="async"
+							/>
 						{:else}
 							<div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-brand-500 to-accent-pink p-4">
 								<svelte:component this={getFileIcon(file.mimeType)} class="w-12 h-12 text-white mb-2" />

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/url"
 	"server/api/serviceaccess"
+	"server/api/tools/features/thumbnails"
 	"server/environment"
 	"server/sqlc/sqlgen"
 	"time"
@@ -36,10 +37,11 @@ type core_interface interface {
 }
 
 type Core struct {
-	Services        *serviceaccess.Access
-	Queries         *sqlgen.Queries
-	UploadBucket    string
-	PresignedExpiry time.Duration
+	Services           *serviceaccess.Access
+	Queries            *sqlgen.Queries
+	UploadBucket       string
+	PresignedExpiry    time.Duration
+	ThumbnailGenerator *thumbnails.Generator
 }
 
 func NewCore(services *serviceaccess.Access, env *environment.Vars) (*Core, error) {
@@ -60,11 +62,14 @@ func NewCore(services *serviceaccess.Access, env *environment.Vars) (*Core, erro
 		// If I were a kinder man I would enable auto-deleting, but I have no respect for server space rn
 	}
 
+	thumbGen := thumbnails.NewGenerator(services.Minio, bucketName, presignedExpiry)
+
 	var intf core_interface = &Core{
-		Services:        services,
-		Queries:         sqlgen.New(services.Postgres),
-		UploadBucket:    bucketName,
-		PresignedExpiry: presignedExpiry,
+		Services:           services,
+		Queries:            sqlgen.New(services.Postgres),
+		UploadBucket:       bucketName,
+		PresignedExpiry:    presignedExpiry,
+		ThumbnailGenerator: thumbGen,
 	}
 
 	return intf.(*Core), nil

@@ -26,6 +26,7 @@ const Document = z
     collectionID: z.string().uuid(),
     mimeType: z.string(),
     downloadURL: z.string().url(),
+    thumbnailURL: z.string().url().optional(),
   })
   .passthrough();
 const Documents = z.array(Document);
@@ -317,6 +318,7 @@ The analysis is run on a snapshot of the collection content.
         collectionID: z.string().uuid(),
         mimeType: z.string(),
         downloadURL: z.string().url(),
+        thumbnailURL: z.string().url().optional(),
       })
       .passthrough(),
   },
