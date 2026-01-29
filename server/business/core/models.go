@@ -38,3 +38,20 @@ type CollectionAnalysis struct {
 	Result    json.RawMessage     `json:"result"`
 	CreatedAt time.Time           `json:"createdAt"`
 }
+
+type CollectionSnapshot struct {
+	ID              uuid.UUID
+	CombinedContent string
+}
+
+// Analysis Types
+
+type DocumentTextExtraction struct {
+	Content string `json:"content"`
+}
+
+func (DocumentTextExtraction) Describe() string {
+	return `{
+	"content": "string - The complete text content extracted from the document, preserving structure and ordering"
+}`
+}

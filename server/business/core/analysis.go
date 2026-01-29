@@ -63,6 +63,41 @@ func (core Core) AnalyzeCollection(
 	}, nil
 }
 
+func (core Core) GetCollectionAnalyses(
+	ctx context.Context,
+	userID uuid.UUID,
+	collectionID uuid.UUID,
+) ([]CollectionAnalysis, error) {
+
+	q := core.Queries
+
+	if _, err := q.GetCollection(ctx, sqlgen.GetCollectionParams{
+		UserID: userID,
+		ID:     collectionID,
+	}); err != nil {
+		return nil, err
+	}
+
+	rows, err := q.GetCollectionAnalysesByCollection(ctx, collectionID)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]CollectionAnalysis, 0, len(rows))
+	for _, r := range rows {
+		results = append(results, CollectionAnalysis{
+			ID:        r.ID,
+			Type:      r.Type,
+			Result:    r.Result,
+			CreatedAt: r.CreatedAt,
+		})
+	}
+
+	return results, nil
+}
+
+// INTERNAL
+
 func (core Core) ensureExtractions(
 	ctx context.Context,
 	userID uuid.UUID,
@@ -104,17 +139,6 @@ func (core Core) ensureExtractions(
 	return nil
 }
 
-// DocumentTextExtraction represents the structured output from OCR/text extraction
-type DocumentTextExtraction struct {
-	Content string `json:"content"`
-}
-
-func (DocumentTextExtraction) Describe() string {
-	return `{
-	"content": "string - The complete text content extracted from the document, preserving structure and ordering"
-}`
-}
-
 func (core Core) extractDocumentContent(
 	ctx context.Context,
 	doc sqlgen.Document,
@@ -139,11 +163,6 @@ func (core Core) extractDocumentContent(
 	}
 
 	return img.ExtractText(ctx, url)
-}
-
-type CollectionSnapshot struct {
-	ID              uuid.UUID
-	CombinedContent string
 }
 
 func (core Core) createSnapshot(
@@ -199,37 +218,4 @@ func (core Core) runAnalysis(
 	}
 
 	return json.RawMessage(resp.OutputText()), nil
-}
-
-func (core Core) GetCollectionAnalyses(
-	ctx context.Context,
-	userID uuid.UUID,
-	collectionID uuid.UUID,
-) ([]CollectionAnalysis, error) {
-
-	q := core.Queries
-
-	if _, err := q.GetCollection(ctx, sqlgen.GetCollectionParams{
-		UserID: userID,
-		ID:     collectionID,
-	}); err != nil {
-		return nil, err
-	}
-
-	rows, err := q.GetCollectionAnalysesByCollection(ctx, collectionID)
-	if err != nil {
-		return nil, err
-	}
-
-	results := make([]CollectionAnalysis, 0, len(rows))
-	for _, r := range rows {
-		results = append(results, CollectionAnalysis{
-			ID:        r.ID,
-			Type:      r.Type,
-			Result:    r.Result,
-			CreatedAt: r.CreatedAt,
-		})
-	}
-
-	return results, nil
 }

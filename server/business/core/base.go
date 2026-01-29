@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"encoding/json"
 	"net/url"
 	"server/api/serviceaccess"
 	"server/environment"
@@ -27,6 +28,11 @@ type core_interface interface {
 	// Analysis operations
 	AnalyzeCollection(ctx context.Context, userID uuid.UUID, collectionID uuid.UUID, kind sqlgen.AnalysisType) (*CollectionAnalysis, error)
 	GetCollectionAnalyses(ctx context.Context, userID uuid.UUID, collectionID uuid.UUID) ([]CollectionAnalysis, error)
+
+	// Internal
+	extractDocumentContent(ctx context.Context, doc sqlgen.Document) (*DocumentTextExtraction, error)
+	createSnapshot(ctx context.Context, collectionID uuid.UUID) (*CollectionSnapshot, error)
+	runAnalysis(ctx context.Context, content string, kind sqlgen.AnalysisType) (json.RawMessage, error)
 }
 
 type Core struct {
