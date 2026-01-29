@@ -40,6 +40,8 @@ const CollectionAnalysis = z
   })
   .passthrough();
 const CollectionAnalyses = z.array(CollectionAnalysis);
+const NewCourseRequest = z.object({ name: z.string() }).passthrough();
+const NewCourseResponse = z.object({ courseName: z.string() }).passthrough();
 const CourseNames = z.array(z.string());
 const CollectionNames = z.array(Collection);
 
@@ -55,6 +57,8 @@ export const schemas = {
   AnalyzeCollectionRequest,
   CollectionAnalysis,
   CollectionAnalyses,
+  NewCourseRequest,
+  NewCourseResponse,
   CourseNames,
   CollectionNames,
 };
@@ -243,6 +247,20 @@ The analysis is run on a snapshot of the collection content.
       },
     ],
     response: z.array(Document),
+  },
+  {
+    method: "post",
+    path: "/core/course",
+    alias: "newCourse",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: z.object({ name: z.string() }).passthrough(),
+      },
+    ],
+    response: z.object({ courseName: z.string() }).passthrough(),
   },
   {
     method: "get",

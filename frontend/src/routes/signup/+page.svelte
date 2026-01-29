@@ -3,32 +3,58 @@
 	import { authService } from '$lib/services';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { Mail, Lock, BookOpen, Sparkles, Brain, GraduationCap } from 'lucide-svelte';
+	import { Mail, Lock, BookOpen, Sparkles, Brain, GraduationCap, UserPlus } from 'lucide-svelte';
 	import { fly, fade } from 'svelte/transition';
 
 	let email = $state('');
 	let password = $state('');
+	let confirmPassword = $state('');
 	let emailError = $state('');
 	let passwordError = $state('');
+	let confirmPasswordError = $state('');
 
-	async function handleLogin(e: Event) {
+	async function handleSignup(e: Event) {
 		e.preventDefault();
 
 		// Reset errors
 		emailError = '';
 		passwordError = '';
+		confirmPasswordError = '';
 
 		// Basic validation
 		if (!email) {
 			emailError = 'Email is required';
 			return;
 		}
+
+		// Email format validation
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!emailRegex.test(email)) {
+			emailError = 'Please enter a valid email address';
+			return;
+		}
+
 		if (!password) {
 			passwordError = 'Password is required';
 			return;
 		}
 
-		const result = await authService.signIn(email, password);
+		if (password.length < 8) {
+			passwordError = 'Password must be at least 8 characters';
+			return;
+		}
+
+		if (!confirmPassword) {
+			confirmPasswordError = 'Please confirm your password';
+			return;
+		}
+
+		if (password !== confirmPassword) {
+			confirmPasswordError = 'Passwords do not match';
+			return;
+		}
+
+		const result = await authService.signUp(email, password);
 
 		if (!result.error) {
 			// Navigate to dashboard on success
@@ -53,8 +79,8 @@
 				</div>
 			</div>
 
-			<h1 class="text-5xl font-bold mb-4">Examplify</h1>
-			<p class="text-xl mb-12 text-white/90">Transform your study materials into interactive learning experiences</p>
+			<h1 class="text-5xl font-bold mb-4">Join Examplify</h1>
+			<p class="text-xl mb-12 text-white/90">Start transforming your study materials today</p>
 
 			<div class="space-y-6 text-left">
 				<div class="flex items-start gap-4" transition:fly={{ y: 20, delay: 200, duration: 400 }}>
@@ -90,7 +116,7 @@
 		</div>
 	</div>
 
-	<!-- Right Side - Login Form -->
+	<!-- Right Side - Signup Form -->
 	<div class="flex flex-col justify-center items-center p-8 lg:p-12 bg-base-100">
 		<div class="w-full max-w-md" transition:fly={{ x: 20, duration: 400 }}>
 			<!-- Mobile logo -->
@@ -101,11 +127,11 @@
 			</div>
 
 			<div class="mb-8">
-				<h2 class="text-4xl font-bold mb-2">Welcome back!</h2>
-				<p class="text-base-content/60">Sign in to continue your learning journey</p>
+				<h2 class="text-4xl font-bold mb-2">Create Account</h2>
+				<p class="text-base-content/60">Sign up to start your learning journey</p>
 			</div>
 
-			<form class="space-y-6" onsubmit={handleLogin}>
+			<form class="space-y-6" onsubmit={handleSignup}>
 				<Input
 					type="email"
 					label="Email"
@@ -125,21 +151,28 @@
 					bind:value={password}
 					error={passwordError}
 					required
-					autocomplete="current-password"
+					autocomplete="new-password"
 				>
 					{#snippet icon()}
 						<Lock class="w-5 h-5" />
 					{/snippet}
 				</Input>
 
-				<div class="flex items-center justify-between">
-					<label class="flex items-center gap-2 cursor-pointer">
-						<input type="checkbox" class="checkbox checkbox-primary checkbox-sm" />
-						<span class="text-sm">Remember me</span>
-					</label>
-					<a href="/forgot-password" class="text-sm text-primary hover:underline">
-						Forgot password?
-					</a>
+				<Input
+					type="password"
+					label="Confirm Password"
+					bind:value={confirmPassword}
+					error={confirmPasswordError}
+					required
+					autocomplete="new-password"
+				>
+					{#snippet icon()}
+						<Lock class="w-5 h-5" />
+					{/snippet}
+				</Input>
+
+				<div class="text-sm text-base-content/60">
+					<p>Password must be at least 8 characters long</p>
 				</div>
 
 				<Button
@@ -149,7 +182,12 @@
 					loading={authService.loading}
 					class="w-full"
 				>
-					{authService.loading ? 'Signing in...' : 'Sign In'}
+					{#snippet icon()}
+						{#if !authService.loading}
+							<UserPlus class="w-5 h-5" />
+						{/if}
+					{/snippet}
+					{authService.loading ? 'Creating account...' : 'Sign Up'}
 				</Button>
 			</form>
 
@@ -157,9 +195,9 @@
 
 			<div class="text-center">
 				<p class="text-base-content/60">
-					Don't have an account?
-					<a href="/signup" class="text-primary font-semibold hover:underline ml-1">
-						Sign up for free
+					Already have an account?
+					<a href="/login" class="text-primary font-semibold hover:underline ml-1">
+						Sign in
 					</a>
 				</p>
 			</div>

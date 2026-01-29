@@ -80,6 +80,12 @@ type CollectionSnapshot struct {
 	CreatedAt       time.Time
 }
 
+type Course struct {
+	Name      string
+	CreatorID uuid.UUID
+	CreatedAt time.Time
+}
+
 type Document struct {
 	ID           uuid.UUID
 	CollectionID uuid.UUID

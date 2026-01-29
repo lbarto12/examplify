@@ -11,6 +11,40 @@ import (
 	"github.com/google/uuid"
 )
 
+const courseExists = `-- name: CourseExists :one
+SELECT EXISTS(
+    SELECT 1 FROM courses
+    WHERE name = $1 AND creator_id = $2
+) AS exists
+`
+
+type CourseExistsParams struct {
+	Name   string
+	UserID uuid.UUID
+}
+
+func (q *Queries) CourseExists(ctx context.Context, arg CourseExistsParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, courseExists, arg.Name, arg.UserID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const createCourse = `-- name: CreateCourse :exec
+INSERT INTO courses (name, creator_id)
+VALUES ($1, $2)
+`
+
+type CreateCourseParams struct {
+	Name      string
+	CreatorID uuid.UUID
+}
+
+func (q *Queries) CreateCourse(ctx context.Context, arg CreateCourseParams) error {
+	_, err := q.db.ExecContext(ctx, createCourse, arg.Name, arg.CreatorID)
+	return err
+}
+
 const getCourseCollections = `-- name: GetCourseCollections :many
 SELECT id, creator_id, course, title, type FROM collections
 WHERE course = $1
@@ -52,8 +86,9 @@ func (q *Queries) GetCourseCollections(ctx context.Context, arg GetCourseCollect
 }
 
 const getCourses = `-- name: GetCourses :many
-SELECT DISTINCT course FROM collections
+SELECT name FROM courses
 WHERE creator_id = $1
+ORDER BY created_at DESC
 `
 
 func (q *Queries) GetCourses(ctx context.Context, userID uuid.UUID) ([]string, error) {
@@ -64,11 +99,11 @@ func (q *Queries) GetCourses(ctx context.Context, userID uuid.UUID) ([]string, e
 	defer rows.Close()
 	var items []string
 	for rows.Next() {
-		var course string
-		if err := rows.Scan(&course); err != nil {
+		var name string
+		if err := rows.Scan(&name); err != nil {
 			return nil, err
 		}
-		items = append(items, course)
+		items = append(items, name)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

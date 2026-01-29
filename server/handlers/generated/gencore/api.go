@@ -89,6 +89,16 @@ type NewCollectionResponse struct {
 	CollectionID openapi_types.UUID `json:"collectionID"`
 }
 
+// NewCourseRequest defines model for NewCourseRequest.
+type NewCourseRequest struct {
+	Name string `json:"name"`
+}
+
+// NewCourseResponse defines model for NewCourseResponse.
+type NewCourseResponse struct {
+	CourseName string `json:"courseName"`
+}
+
 // UploadFileRequest defines model for UploadFileRequest.
 type UploadFileRequest struct {
 	CollectionID openapi_types.UUID `json:"collectionID"`
@@ -105,6 +115,9 @@ type NewCollectionJSONRequestBody = NewCollectionRequest
 
 // AnalyzeCollectionJSONRequestBody defines body for AnalyzeCollection for application/json ContentType.
 type AnalyzeCollectionJSONRequestBody = AnalyzeCollectionRequest
+
+// NewCourseJSONRequestBody defines body for NewCourse for application/json ContentType.
+type NewCourseJSONRequestBody = NewCourseRequest
 
 // UploadFileJSONRequestBody defines body for UploadFile for application/json ContentType.
 type UploadFileJSONRequestBody = UploadFileRequest
@@ -132,6 +145,9 @@ type ServerInterface interface {
 
 	// (GET /core/collections/{id}/documents)
 	GetCollectionDocuments(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+
+	// (POST /core/course)
+	NewCourse(w http.ResponseWriter, r *http.Request)
 
 	// (GET /core/course/{courseID}/collections)
 	GetCourseCollections(w http.ResponseWriter, r *http.Request, courseID string)
@@ -185,6 +201,11 @@ func (_ Unimplemented) FilterCollections(w http.ResponseWriter, r *http.Request,
 
 // (GET /core/collections/{id}/documents)
 func (_ Unimplemented) GetCollectionDocuments(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (POST /core/course)
+func (_ Unimplemented) NewCourse(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -390,6 +411,20 @@ func (siw *ServerInterfaceWrapper) GetCollectionDocuments(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetCollectionDocuments(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// NewCourse operation middleware
+func (siw *ServerInterfaceWrapper) NewCourse(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.NewCourse(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -610,6 +645,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/core/collections/{id}/documents", wrapper.GetCollectionDocuments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/core/course", wrapper.NewCourse)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/core/course/{courseID}/collections", wrapper.GetCourseCollections)

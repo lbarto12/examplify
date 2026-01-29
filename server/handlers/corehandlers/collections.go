@@ -32,6 +32,27 @@ func (handler Handler) NewCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Auto-create course if it doesn't exist
+	exists, err := handler.Queries.CourseExists(r.Context(), sqlgen.CourseExistsParams{
+		Name:   request.Course,
+		UserID: *userID,
+	})
+	if err != nil {
+		apiresponses.InternalError(w, "Internal Error", err)
+		return
+	}
+
+	if !exists {
+		err = handler.Queries.CreateCourse(r.Context(), sqlgen.CreateCourseParams{
+			Name:      request.Course,
+			CreatorID: *userID,
+		})
+		if err != nil {
+			apiresponses.InternalError(w, "Failed to create course", err)
+			return
+		}
+	}
+
 	collection, err := handler.Core.CreateCollection(r.Context(), *userID, core.Collection{
 		Title:  request.Title,
 		Type:   request.Type,

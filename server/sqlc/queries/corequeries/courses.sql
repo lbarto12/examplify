@@ -1,6 +1,17 @@
+-- name: CreateCourse :exec
+INSERT INTO courses (name, creator_id)
+VALUES (@name, @creator_id);
+
 -- name: GetCourses :many
-SELECT DISTINCT course FROM collections
-WHERE creator_id = @user_id;
+SELECT name FROM courses
+WHERE creator_id = @user_id
+ORDER BY created_at DESC;
+
+-- name: CourseExists :one
+SELECT EXISTS(
+    SELECT 1 FROM courses
+    WHERE name = @name AND creator_id = @user_id
+) AS exists;
 
 -- name: GetCourseCollections :many
 SELECT * FROM collections

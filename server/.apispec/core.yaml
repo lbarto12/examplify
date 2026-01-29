@@ -208,6 +208,21 @@ paths:
         "500":
           description: Failed to retrieve analyses
 
+  /core/course:
+    post:
+      operationId: newCourse
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewCourseRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewCourseResponse'
+
   /core/courses:
     get:
       operationId: getCourses
@@ -217,7 +232,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CourseNames'
-  
+
   /core/course/{courseID}/collections:
     get:
       operationId: getCourseCollections
@@ -238,11 +253,25 @@ paths:
 components:
   schemas:
 
+    NewCourseRequest:
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    NewCourseResponse:
+      properties:
+        courseName:
+          type: string
+      required:
+        - courseName
+
     CourseNames:
       type: array
       items:
         type: string
-    
+
     CollectionNames:
       type: array
       items:

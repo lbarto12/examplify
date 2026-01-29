@@ -1,17 +1,28 @@
-import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
-  const { key, value } = await request.json();
+	try {
+		const body = await request.json();
+		const { auth } = body;
 
-  // set cookie
-  cookies.set(key, value, {
-    path: '/',
-    httpOnly: false,        // must be false if JS needs to read it
-    sameSite: 'lax',
-    secure: false,          // set true in production (HTTPS)
-    maxAge: 60 * 60 * 24,   // 1 day
-  });
+		if (auth) {
+			// Set the auth cookie
+			cookies.set('auth', auth, {
+				path: '/',
+				httpOnly: false, // Allow JavaScript access for the auth plugin
+				secure: false, // Set to true in production with HTTPS
+				sameSite: 'lax',
+				maxAge: 60 * 60 * 24 * 7 // 7 days
+			});
+		} else {
+			// Clear the auth cookie if auth is empty
+			cookies.delete('auth', { path: '/' });
+		}
 
-  return json({ ok: true });
+		return json({ success: true });
+	} catch (error) {
+		console.error('Error setting cookie:', error);
+		return json({ success: false, error: 'Failed to set cookie' }, { status: 500 });
+	}
 };

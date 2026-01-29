@@ -1,6 +1,25 @@
 <script lang="ts">
-	import { getClient } from '$lib/apis/core.svelte';
+	import { collectionsService, documentsService } from '$lib/services';
 	import { onMount } from 'svelte';
+	import Card from '$lib/components/ui/Card.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import {
+		Plus,
+		Upload,
+		FileText,
+		Image,
+		File as FileIcon,
+		X,
+		BookOpen,
+		GraduationCap,
+		Folder,
+		Camera
+	} from 'lucide-svelte';
+	import { fly } from 'svelte/transition';
 
 	const { data } = $props<{
 		data: {
@@ -10,51 +29,21 @@
 
 	const { courseId } = data;
 
-    console.log(courseId);
-
-
-	// Collections (left column)
-	let collections: {
-        ID: string;
-        title: string;
-        course: string;
-        type: string;
-    }[] = $state([]);
-	// Modal state
-	let showModal = $state(false);
-
-	// Upload state
+	let showUploadModal = $state(false);
 	let files: File[] = $state([]);
 	let selectedType: 'lecture' | 'exam' = $state('lecture');
-    let selectedCourse: string = $state('');
-    let selectedTitle: string = $state('');
+	let collectionTitle = $state('');
+	let dragOver = $state(false);
+	let uploading = $state(false);
 
-	// Placeholder function for fetching collections
-	async function fetchCollections() {
-        const api = getClient();
-
-        try {
-            console.log(courseId);
-            const d = await api.getCourseCollections({
-                params: {
-                    courseID: courseId
-                }
-            });
-            console.log(d);
-            collections = d;
-        }
-        catch (e) {
-            console.log(e);
-        }
-	}
-
-	onMount(() => {
-		fetchCollections();
+	onMount(async () => {
+		await collectionsService.getByCourse(courseId);
 	});
 
-	// Drag and drop handlers
 	function handleDrop(event: DragEvent) {
 		event.preventDefault();
+		dragOver = false;
+
 		if (!event.dataTransfer) return;
 		const droppedFiles = Array.from(event.dataTransfer.files);
 		files = [...files, ...droppedFiles];
@@ -62,144 +51,324 @@
 
 	function handleDragOver(event: DragEvent) {
 		event.preventDefault();
+		dragOver = true;
 	}
 
-	// Upload function (empty for now)
-	async function uploadFiles() {
-        const api = getClient();
-		console.log('Upload files:', files, 'Type:', selectedType);
+	function handleDragLeave() {
+		dragOver = false;
+	}
 
-        const d = await api.newCollection({
-            course: selectedCourse,
-            title: selectedTitle,
-            type: selectedType
-        });
+	function handleFileSelect(event: Event) {
+		const target = event.target as HTMLInputElement;
+		if (!target.files) return;
 
-        await Promise.all(files.map(async(f) => {
-            const { uploadURL } = await api.uploadFile({
-                collectionID: d.collectionID,
-                mimeType: f.type,
-            });
+		files = [...files, ...Array.from(target.files)];
+	}
 
-			// PUT file to MinIO
-			const res = await fetch(uploadURL, {
-				method: "PUT",
-				headers: {
-					"Content-Type": f.type
-				},
-				body: f
-			});
+	function handleCameraCapture(event: Event) {
+		const target = event.target as HTMLInputElement;
+		if (!target.files) return;
 
+		files = [...files, ...Array.from(target.files)];
+	}
 
-			if (!res.ok) {
-				throw new Error(`Failed to upload ${f.name}`);
-			}
+	function openCamera() {
+		document.getElementById('camera-input')?.click();
+	}
 
-        }));
+	function removeFile(index: number) {
+		files = files.filter((_, i) => i !== index);
+	}
 
-		// Your upload logic here
+	function getFileIcon(file: File) {
+		if (file.type.startsWith('image/')) return Image;
+		if (file.type.includes('pdf')) return FileText;
+		return FileIcon;
+	}
+
+	async function handleUpload() {
+		if (!collectionTitle.trim() || files.length === 0) return;
+
+		uploading = true;
+
+		// Create collection
+		const result = await collectionsService.create({
+			title: collectionTitle,
+			course: courseId,
+			type: selectedType
+		});
+
+		if (result.data) {
+			// Upload files
+			await documentsService.uploadFiles(result.data.collectionID, files);
+
+			// Reset form
+			showUploadModal = false;
+			collectionTitle = '';
+			files = [];
+			selectedType = 'lecture';
+
+			// Refresh collections
+			await collectionsService.getByCourse(courseId);
+		}
+
+		uploading = false;
+	}
+
+	function openModal() {
+		showUploadModal = true;
+	}
+
+	function closeModal() {
+		if (!uploading) {
+			showUploadModal = false;
+			collectionTitle = '';
+			files = [];
+			selectedType = 'lecture';
+		}
 	}
 </script>
 
-<div class="flex min-h-screen bg-base-200 p-6 space-x-6">
-	<!-- Left column: collections -->
-	<div class="w-1/3 bg-base-100 p-4 rounded-lg shadow-md">
-		<h2 class="text-lg font-bold mb-4">Collections</h2>
-		{#if collections.length === 0}
-			<p>No collections yet.</p>
-		{:else}
-			<ul class="menu bg-base-100 w-full">
-				{#each collections as collection}
-					<li>
-						<a href="/dashboard/{courseId}/{collection.ID}" class="hover:bg-primary hover:text-primary-content">{collection.title}</a>
-					</li>
-				{/each}
-			</ul>
-		{/if}
+<div class="min-h-[calc(100vh-200px)]">
+	<!-- Page header -->
+	<div class="mb-8 flex items-center justify-between">
+		<div>
+			<h1 class="text-3xl font-bold mb-2">{courseId}</h1>
+			<p class="text-base-content/60">Manage your study collections</p>
+		</div>
+
+		<Button variant="gradient" size="lg" onclick={openModal}>
+			{#snippet icon()}
+				<Plus class="w-5 h-5" />
+			{/snippet}
+			New Collection
+		</Button>
 	</div>
 
-	<!-- Right column: add collection -->
-	<div class="flex-1 bg-base-100 p-4 rounded-lg shadow-md flex flex-col items-center justify-center">
-		<button class="btn btn-primary" on:click={() => (showModal = true)}>
-			Add Collection
-		</button>
-	</div>
+	<!-- Collections grid -->
+	{#if collectionsService.loading}
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+			{#each Array(6) as _}
+				<Skeleton height="200px" class="w-full" />
+			{/each}
+		</div>
+	{:else if collectionsService.collections.length === 0}
+		<!-- Empty state -->
+		<div class="flex flex-col items-center justify-center py-20" transition:fly={{ y: 20, duration: 400 }}>
+			<div class="w-32 h-32 gradient-primary rounded-3xl flex items-center justify-center mb-6">
+				<Folder class="w-16 h-16 text-white" />
+			</div>
+			<h3 class="text-2xl font-bold mb-2">No Collections Yet</h3>
+			<p class="text-base-content/60 mb-8 text-center max-w-md">
+				Start by creating your first collection. Upload lecture notes or exam materials to get AI-powered study aids.
+			</p>
+			<Button variant="gradient" size="lg" onclick={openModal}>
+				{#snippet icon()}
+					<Plus class="w-5 h-5" />
+				{/snippet}
+				Create First Collection
+			</Button>
+		</div>
+	{:else}
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+			{#each collectionsService.collections as collection (collection.ID)}
+				<a href={`/dashboard/${courseId}/${collection.ID}`} transition:fly={{ y: 20, duration: 300 }}>
+					<Card hover clickable gradient class="h-full">
+						{#snippet header()}
+							<div class="flex items-start justify-between">
+								<div class="flex items-center gap-3">
+									<div class="w-12 h-12 bg-gradient-to-br from-brand-500 to-accent-pink rounded-xl flex items-center justify-center flex-shrink-0">
+										<BookOpen class="w-6 h-6 text-white" />
+									</div>
+									<div class="flex-1 min-w-0">
+										<h3 class="font-bold text-lg truncate">{collection.title}</h3>
+										<Badge variant={collection.type === 'lecture' ? 'primary' : 'secondary'} size="sm">
+											{collection.type}
+										</Badge>
+									</div>
+								</div>
+							</div>
+						{/snippet}
+
+						<div class="mt-4 text-base-content/60 text-sm">
+							<p>Click to view files and create analyses</p>
+						</div>
+					</Card>
+				</a>
+			{/each}
+		</div>
+	{/if}
 </div>
 
-<!-- Modal -->
-{#if showModal}
-	<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-		<div class="bg-base-100 rounded-lg p-6 w-2/3 max-w-2xl shadow-lg">
-			<h2 class="text-xl font-bold mb-4">Upload Files</h2>
+<!-- Upload Modal -->
+<Modal bind:open={showUploadModal} title="Create New Collection" size="lg" onclose={closeModal}>
+	<div class="space-y-6">
+		<!-- Collection details -->
+		<Input
+			type="text"
+			label="Collection Title"
+			bind:value={collectionTitle}
+			placeholder="e.g., Week 3 Lecture Notes"
+			required
+		>
+			{#snippet icon()}
+				<FileText class="w-5 h-5" />
+			{/snippet}
+		</Input>
 
-			<!-- Dropdown -->
-			<div class="mb-4">
-				<label class="label">
-					<span class="label-text">Collection Type</span>
+		<!-- Type selector -->
+		<div class="form-control">
+			<label class="label">
+				<span class="label-text font-medium">Collection Type</span>
+			</label>
+			<div class="flex gap-4">
+				<label class="flex-1">
+					<input
+						type="radio"
+						name="type"
+						value="lecture"
+						bind:group={selectedType}
+						class="radio radio-primary"
+					/>
+					<span class="ml-2">Lecture Notes</span>
 				</label>
-				<select bind:value={selectedType} class="select select-bordered w-full">
-					<option value="lecture">lecture notes</option>
-					<option value="exam">exam</option>
-				</select>
+				<label class="flex-1">
+					<input
+						type="radio"
+						name="type"
+						value="exam"
+						bind:group={selectedType}
+						class="radio radio-primary"
+					/>
+					<span class="ml-2">Exam Materials</span>
+				</label>
 			</div>
+		</div>
 
-            			<!-- Dropdown -->
-            <div class="mb-4">
-                <label class="label">
-                    <span class="label-text">Course Code</span>
-                </label> 
-                <input bind:value={selectedCourse} class="input" type="text"/>
-            </div>
-
-            <div class="mb-4">
-                <label class="label">
-                    <span class="label-text">Collection Title</span>
-                </label> 
-                <input bind:value={selectedTitle} class="input" type="text"/>
-            </div>
-
-			<!-- Drag & drop area -->
+		<!-- Drag-drop area -->
+		<div>
+			<label class="label">
+				<span class="label-text font-medium">Upload Files</span>
+			</label>
 			<div
-				class="border-2 border-dashed border-gray-400 rounded-lg p-6 text-center mb-4 cursor-pointer"
-				on:drop={handleDrop}
-				on:dragover={handleDragOver}
+				class={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+					dragOver
+						? 'border-primary bg-primary/10'
+						: 'border-base-300 hover:border-primary/50 hover:bg-base-200/50'
+				}`}
+				ondrop={handleDrop}
+				ondragover={handleDragOver}
+				ondragleave={handleDragLeave}
+				onclick={() => document.getElementById('file-input')?.click()}
 			>
-				<p class="text-gray-500 mb-2">Drag & drop images or PDFs here</p>
-				<p class="text-sm text-gray-400">or click to select files</p>
+				<Upload class="w-12 h-12 mx-auto mb-4 text-base-content/40" />
+				<p class="font-semibold mb-1">Drop files here or click to browse</p>
+				<p class="text-sm text-base-content/60 mb-4">
+					Supports images (PNG, JPG) and PDFs
+				</p>
 				<input
+					id="file-input"
 					type="file"
 					multiple
+					accept="image/*,application/pdf"
 					class="hidden"
-					on:change={(e) => {
-						const target = e.target as HTMLInputElement;
-						if (!target.files) return;
-						files = [...files, ...Array.from(target.files)];
-					}}
+					onchange={handleFileSelect}
+				/>
+				<input
+					id="camera-input"
+					type="file"
+					accept="image/*"
+					capture="environment"
+					class="hidden"
+					onchange={handleCameraCapture}
 				/>
 			</div>
 
-			<!-- File list -->
-			{#if files.length > 0}
-				<ul class="mb-4">
-					{#each files as file, index}
-						<li class="flex justify-between items-center py-1 border-b border-base-300">
-							<span>{file.name}</span>
-							<button
-								class="btn btn-sm btn-ghost text-error"
-								on:click={() => files.splice(index, 1)}
-							>
-								Remove
-							</button>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-
-			<!-- Buttons -->
-			<div class="flex justify-end space-x-2">
-				<button class="btn btn-ghost" on:click={() => (showModal = false)}>Cancel</button>
-				<button class="btn btn-primary" on:click={uploadFiles}>Submit</button>
+			<!-- Camera capture button (visible on mobile) -->
+			<div class="mt-3">
+				<Button
+					variant="outline"
+					size="md"
+					class="w-full"
+					onclick={(e) => { e.stopPropagation(); openCamera(); }}
+					type="button"
+				>
+					{#snippet icon()}
+						<Camera class="w-5 h-5" />
+					{/snippet}
+					Take Photo
+				</Button>
 			</div>
 		</div>
+
+		<!-- File list -->
+		{#if files.length > 0}
+			<div class="space-y-2">
+				<label class="label">
+					<span class="label-text font-medium">{files.length} file(s) selected</span>
+				</label>
+				<div class="space-y-2 max-h-60 overflow-y-auto">
+					{#each files as file, index (file.name + index)}
+						<div
+							class="flex items-center gap-3 p-3 bg-base-200 rounded-lg"
+							transition:fly={{ x: -20, duration: 200 }}
+						>
+							<svelte:component this={getFileIcon(file)} class="w-5 h-5 text-primary flex-shrink-0" />
+							<div class="flex-1 min-w-0">
+								<p class="font-medium text-sm truncate">{file.name}</p>
+								<p class="text-xs text-base-content/60">
+									{(file.size / 1024).toFixed(1)} KB
+								</p>
+							</div>
+							<button
+								class="btn btn-ghost btn-circle btn-sm"
+								onclick={() => removeFile(index)}
+								disabled={uploading}
+							>
+								<X class="w-4 h-4" />
+							</button>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
+		<!-- Upload progress -->
+		{#if documentsService.uploadQueue.length > 0}
+			<div class="space-y-2">
+				<label class="label">
+					<span class="label-text font-medium">Uploading...</span>
+				</label>
+				{#each documentsService.uploadQueue as item (item.file.name)}
+					<div class="space-y-1">
+						<div class="flex items-center justify-between text-sm">
+							<span class="truncate">{item.file.name}</span>
+							<span class="text-base-content/60">
+								{item.status === 'completed' ? '100%' : `${item.progress}%`}
+							</span>
+						</div>
+						<progress
+							class="progress progress-primary w-full"
+							value={item.progress}
+							max="100"
+						></progress>
+					</div>
+				{/each}
+			</div>
+		{/if}
 	</div>
-{/if}
+
+	{#snippet actions()}
+		<Button variant="ghost" onclick={closeModal} disabled={uploading}>
+			Cancel
+		</Button>
+		<Button
+			variant="gradient"
+			onclick={handleUpload}
+			loading={uploading || collectionsService.loading}
+			disabled={!collectionTitle.trim() || files.length === 0}
+		>
+			{uploading ? 'Uploading...' : 'Create Collection'}
+		</Button>
+	{/snippet}
+</Modal>
