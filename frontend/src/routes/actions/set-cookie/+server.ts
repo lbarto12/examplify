@@ -6,18 +6,23 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		const body = await request.json();
 		const { auth } = body;
 
+		// Cookie options - secure: false for localhost development
+		const cookieOptions = {
+			path: '/',
+			httpOnly: false, // Allow JavaScript access for the auth plugin
+			secure: false, // Set to true in production with HTTPS
+			sameSite: 'lax' as const
+		};
+
 		if (auth) {
 			// Set the auth cookie
 			cookies.set('auth', auth, {
-				path: '/',
-				httpOnly: false, // Allow JavaScript access for the auth plugin
-				secure: false, // Set to true in production with HTTPS
-				sameSite: 'lax',
+				...cookieOptions,
 				maxAge: 60 * 60 * 24 * 7 // 7 days
 			});
 		} else {
 			// Clear the auth cookie if auth is empty
-			cookies.delete('auth', { path: '/' });
+			cookies.delete('auth', cookieOptions);
 		}
 
 		return json({ success: true });
