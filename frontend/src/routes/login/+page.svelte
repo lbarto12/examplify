@@ -46,7 +46,7 @@
 			<div class="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
 		</div>
 
-		<div class="relative z-10 text-white text-center max-w-md" transition:fade={{ duration: 600 }}>
+		<div class="relative z-10 text-white text-center max-w-md" in:fade={{ duration: 400 }}>
 			<div class="flex justify-center mb-8">
 				<div class="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-sm">
 					<BookOpen class="w-12 h-12" />
@@ -57,7 +57,7 @@
 			<p class="text-xl mb-12 text-white/90">Transform your study materials into interactive learning experiences</p>
 
 			<div class="space-y-6 text-left">
-				<div class="flex items-start gap-4" transition:fly={{ y: 20, delay: 200, duration: 400 }}>
+				<div class="flex items-start gap-4" in:fly={{ y: 20, delay: 100, duration: 400 }}>
 					<div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
 						<Sparkles class="w-6 h-6" />
 					</div>
@@ -67,7 +67,7 @@
 					</div>
 				</div>
 
-				<div class="flex items-start gap-4" transition:fly={{ y: 20, delay: 300, duration: 400 }}>
+				<div class="flex items-start gap-4" in:fly={{ y: 20, delay: 200, duration: 400 }}>
 					<div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
 						<Brain class="w-6 h-6" />
 					</div>
@@ -77,7 +77,7 @@
 					</div>
 				</div>
 
-				<div class="flex items-start gap-4" transition:fly={{ y: 20, delay: 400, duration: 400 }}>
+				<div class="flex items-start gap-4" in:fly={{ y: 20, delay: 300, duration: 400 }}>
 					<div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
 						<GraduationCap class="w-6 h-6" />
 					</div>
@@ -92,7 +92,7 @@
 
 	<!-- Right Side - Login Form -->
 	<div class="flex flex-col justify-center items-center p-8 lg:p-12 bg-base-100">
-		<div class="w-full max-w-md" transition:fly={{ x: 20, duration: 400 }}>
+		<div class="w-full max-w-md" in:fly={{ x: 20, duration: 400 }}>
 			<!-- Mobile logo -->
 			<div class="lg:hidden flex justify-center mb-8">
 				<div class="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center">

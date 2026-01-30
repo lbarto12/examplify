@@ -17,9 +17,10 @@
 		BookOpen,
 		GraduationCap,
 		Folder,
-		Camera
+		Camera,
+		ArrowLeft
 	} from 'lucide-svelte';
-	import { fly } from 'svelte/transition';
+	import { fly, fade } from 'svelte/transition';
 
 	const { data } = $props<{
 		data: {
@@ -35,9 +36,13 @@
 	let collectionTitle = $state('');
 	let dragOver = $state(false);
 	let uploading = $state(false);
+	let loaded = $state(false);
 
 	onMount(async () => {
+		// Clear stale data before loading
+		collectionsService.collections = [];
 		await collectionsService.getByCourse(courseId);
+		loaded = true;
 	});
 
 	function handleDrop(event: DragEvent) {
@@ -132,9 +137,14 @@
 <div class="min-h-[calc(100vh-200px)]">
 	<!-- Page header -->
 	<div class="mb-8 flex items-center justify-between">
-		<div>
-			<h1 class="text-3xl font-bold mb-2">{courseId}</h1>
-			<p class="text-base-content/60">Manage your study collections</p>
+		<div class="flex items-center gap-4">
+			<a href="/dashboard" class="btn btn-ghost btn-circle">
+				<ArrowLeft class="w-5 h-5" />
+			</a>
+			<div>
+				<h1 class="text-3xl font-bold mb-1">{courseId}</h1>
+				<p class="text-base-content/60">Manage your study collections</p>
+			</div>
 		</div>
 
 		<Button variant="gradient" size="lg" onclick={openModal}>
@@ -146,15 +156,12 @@
 	</div>
 
 	<!-- Collections grid -->
-	{#if collectionsService.loading}
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-			{#each Array(6) as _}
-				<Skeleton height="200px" class="w-full" />
-			{/each}
-		</div>
+	{#if !loaded}
+		<!-- Empty placeholder while loading -->
+		<div class="min-h-64"></div>
 	{:else if collectionsService.collections.length === 0}
 		<!-- Empty state -->
-		<div class="flex flex-col items-center justify-center py-20" transition:fly={{ y: 20, duration: 400 }}>
+		<div class="flex flex-col items-center justify-center py-20" in:fly={{ y: 15, duration: 250 }}>
 			<div class="w-32 h-32 gradient-primary rounded-3xl flex items-center justify-center mb-6">
 				<Folder class="w-16 h-16 text-white" />
 			</div>
@@ -170,9 +177,9 @@
 			</Button>
 		</div>
 	{:else}
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" in:fly={{ y: 15, duration: 250 }}>
 			{#each collectionsService.collections as collection (collection.ID)}
-				<a href={`/dashboard/${courseId}/${collection.ID}`} transition:fly={{ y: 20, duration: 300 }}>
+				<a href={`/dashboard/${courseId}/${collection.ID}`}>
 					<Card hover clickable gradient class="h-full">
 						{#snippet header()}
 							<div class="flex items-start justify-between">

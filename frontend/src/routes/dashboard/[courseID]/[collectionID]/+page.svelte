@@ -5,7 +5,6 @@
 	import Card from '$lib/components/ui/Card.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
-	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import {
 		Image,
@@ -17,7 +16,8 @@
 		BookMarked,
 		Loader,
 		ZoomIn,
-		Download
+		Download,
+		ArrowLeft
 	} from 'lucide-svelte';
 	import { fly } from 'svelte/transition';
 
@@ -34,6 +34,7 @@
 	let selectedFile: { id: string; name: string; mimeType: string; url: string; thumbnailUrl?: string } | null = $state(null);
 	let showFileModal = $state(false);
 	let creatingAnalysis = $state<string | null>(null);
+	let loaded = $state(false);
 
 	const analysisTypes = [
 		{
@@ -71,9 +72,15 @@
 	];
 
 	onMount(async () => {
+		// Clear stale data before loading
+		collectionsService.currentCollection = null;
+		collectionsService.analyses = [];
+		files = [];
+
 		await collectionsService.getById(collectionID);
 		await fetchFiles();
 		await collectionsService.getAnalyses(collectionID);
+		loaded = true;
 	});
 
 	async function fetchFiles() {
@@ -118,37 +125,40 @@
 	}
 </script>
 
-<div class="space-y-8">
-	<!-- Page header -->
-	<div>
-		<h1 class="text-3xl font-bold mb-2">
-			{collectionsService.currentCollection?.title || 'Collection'}
-		</h1>
-		<div class="flex items-center gap-2">
-			<Badge
-				variant={collectionsService.currentCollection?.type === 'lecture' ? 'primary' : 'secondary'}
-			>
-				{collectionsService.currentCollection?.type || ''}
-			</Badge>
-			<span class="text-base-content/60">•</span>
-			<span class="text-base-content/60">{files.length} file(s)</span>
-		</div>
-	</div>
-
-	<!-- File Gallery -->
-	<div>
-		<h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-			<Image class="w-5 h-5 text-primary" />
-			Uploaded Files
-		</h2>
-
-		{#if documentsService.loading}
-			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-				{#each Array(6) as _}
-					<Skeleton class="aspect-square w-full" />
-				{/each}
+{#if !loaded}
+	<!-- Empty placeholder while loading -->
+	<div class="min-h-64"></div>
+{:else}
+	<div class="space-y-8" in:fly={{ y: 15, duration: 250 }}>
+		<!-- Page header -->
+		<div class="flex items-center gap-4">
+			<a href={`/dashboard/${courseId}`} class="btn btn-ghost btn-circle">
+				<ArrowLeft class="w-5 h-5" />
+			</a>
+			<div>
+				<h1 class="text-3xl font-bold mb-1">
+					{collectionsService.currentCollection?.title || 'Collection'}
+				</h1>
+				<div class="flex items-center gap-2">
+					<Badge
+						variant={collectionsService.currentCollection?.type === 'lecture' ? 'primary' : 'secondary'}
+					>
+						{collectionsService.currentCollection?.type || ''}
+					</Badge>
+					<span class="text-base-content/60">•</span>
+					<span class="text-base-content/60">{files.length} file(s)</span>
+				</div>
 			</div>
-		{:else if files.length === 0}
+		</div>
+
+		<!-- File Gallery -->
+		<div>
+			<h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+				<Image class="w-5 h-5 text-primary" />
+				Uploaded Files
+			</h2>
+
+			{#if files.length === 0}
 			<Card class="text-center py-12">
 				<div class="w-20 h-20 mx-auto mb-4 bg-base-200 rounded-full flex items-center justify-center">
 					<FileIcon class="w-10 h-10 text-base-content/40" />
@@ -161,7 +171,6 @@
 					<button
 						class="group relative aspect-square overflow-hidden rounded-xl bg-base-200 transition-all hover:scale-105 hover:shadow-xl"
 						onclick={() => openFile(file)}
-						transition:fly={{ y: 20, duration: 300 }}
 					>
 						{#if file.mimeType.startsWith('image/')}
 							<img
@@ -197,13 +206,7 @@
 			Analyses
 		</h2>
 
-		{#if collectionsService.loading}
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				{#each Array(4) as _}
-					<Skeleton height="80px" class="w-full" />
-				{/each}
-			</div>
-		{:else if collectionsService.analyses.length === 0}
+		{#if collectionsService.analyses.length === 0}
 			<Card class="text-center py-8">
 				<Brain class="w-16 h-16 mx-auto mb-3 text-base-content/40" />
 				<p class="text-base-content/60 mb-1">No analyses created yet</p>
@@ -213,7 +216,7 @@
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				{#each collectionsService.analyses as analysis (analysis.id)}
 					{@const typeConfig = analysisTypes.find((t) => t.type === analysis.type)}
-					<a href={`/dashboard/${courseId}/${collectionID}/${analysis.id}`} transition:fly={{ y: 20, duration: 300 }}>
+					<a href={`/dashboard/${courseId}/${collectionID}/${analysis.id}`}>
 						<Card hover clickable class="h-full">
 							<div class="flex items-center gap-4">
 								{#if typeConfig}
@@ -273,7 +276,8 @@
 			{/each}
 		</div>
 	</div>
-</div>
+	</div>
+{/if}
 
 <!-- File Preview Modal -->
 <Modal bind:open={showFileModal} title={selectedFile?.name || 'File Preview'} size="xl" onclose={closeModal}>

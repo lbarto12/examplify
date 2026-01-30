@@ -2,12 +2,12 @@
     import "../app.css";
     import Toast from "$lib/components/ui/Toast.svelte";
 
-    let { children } = $props(); // Existing render logic
+    let { children } = $props();
 </script>
 
-<main class="flex-grow overflow-y-auto">
+<div class="min-h-screen bg-base-100">
     {@render children()}
-</main>
+</div>
 
 <!-- Global Toast Notifications -->
 <Toast />

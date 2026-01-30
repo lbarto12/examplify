@@ -18,7 +18,8 @@
 		Plus,
 		GraduationCap
 	} from 'lucide-svelte';
-	import { fly, slide } from 'svelte/transition';
+	import { fly, slide, fade } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 
 	let { children } = $props();
 

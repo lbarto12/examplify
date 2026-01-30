@@ -5,7 +5,6 @@
 	import FlashcardsView from '$lib/components/FlashCard.svelte';
 	import QuizView from '$lib/components/Quiz.svelte';
 	import DeepSummaryView from '$lib/components/DeepSummary.svelte';
-	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import {
@@ -15,8 +14,10 @@
 		BookMarked,
 		Download,
 		Share2,
-		RotateCw
+		RotateCw,
+		ArrowLeft
 	} from 'lucide-svelte';
+	import { fly } from 'svelte/transition';
 
 	const { data } = $props<{
 		data: {
@@ -27,6 +28,8 @@
 	}>();
 
 	const { courseId, collectionID, analysisID } = data;
+
+	let loaded = $state(false);
 
 	const analysisTypeConfig = {
 		summary: {
@@ -56,7 +59,12 @@
 	};
 
 	onMount(async () => {
+		// Clear stale data before loading
+		analysesService.currentAnalysis = null;
+		analysesService.error = null;
+
 		await analysesService.getById(collectionID, analysisID);
+		loaded = true;
 	});
 
 	async function handleExport() {
@@ -77,14 +85,12 @@
 	}
 </script>
 
-<div class="space-y-6">
-	{#if analysesService.loading}
-		<!-- Loading state -->
-		<div class="space-y-4">
-			<Skeleton height="60px" class="w-full" />
-			<Skeleton height="400px" class="w-full" />
-		</div>
-	{:else if analysesService.error}
+{#if !loaded}
+	<!-- Empty placeholder while loading -->
+	<div class="min-h-64"></div>
+{:else}
+	<div class="space-y-6" in:fly={{ x: 20, duration: 250 }}>
+		{#if analysesService.error}
 		<!-- Error state -->
 		<div class="text-center py-20">
 			<div class="w-20 h-20 mx-auto mb-4 bg-error/10 rounded-full flex items-center justify-center">
@@ -103,8 +109,11 @@
 		<!-- Header -->
 		<div class="flex items-start justify-between gap-4 flex-wrap">
 			<div class="flex items-center gap-4">
-				<div class="w-16 h-16 bg-gradient-to-br {config.gradient} rounded-2xl flex items-center justify-center flex-shrink-0">
-					<svelte:component this={config.icon} class="w-8 h-8 text-white" />
+				<a href={`/dashboard/${courseId}/${collectionID}`} class="btn btn-ghost btn-circle">
+					<ArrowLeft class="w-5 h-5" />
+				</a>
+				<div class="w-14 h-14 bg-gradient-to-br {config.gradient} rounded-2xl flex items-center justify-center flex-shrink-0">
+					<svelte:component this={config.icon} class="w-7 h-7 text-white" />
 				</div>
 				<div>
 					<h1 class="text-3xl font-bold mb-1">{config.title}</h1>
@@ -146,4 +155,5 @@
 			<p class="text-base-content/60">Analysis not found</p>
 		</div>
 	{/if}
-</div>
+	</div>
+{/if}
