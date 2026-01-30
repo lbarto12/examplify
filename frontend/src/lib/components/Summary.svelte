@@ -1,18 +1,16 @@
 <script lang="ts">
-    import '../../app.css';
+	import Latex from './ui/Latex.svelte';
 
-    type SummaryResult = {
-        summary: string;
-    };
-    
-    let { data }: {data: SummaryResult}  = $props();
+	type SummaryResult = {
+		summary: string;
+	};
+
+	let { data }: { data: SummaryResult } = $props();
 </script>
 
-<div class="card bg-base-100 p-4 shadow-md">
-	<h2 class="text-xl font-bold mb-2">Summary</h2>
-	<p>{data.summary}</p>
+<div class="card bg-base-100 p-6 shadow-md">
+	<h2 class="text-xl font-bold mb-4">Summary</h2>
+	<div class="prose prose-lg max-w-none">
+		<Latex content={data.summary} />
+	</div>
 </div>
-
-<style>
-	@import '../../app.css';
-</style>

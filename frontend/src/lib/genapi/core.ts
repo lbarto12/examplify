@@ -38,6 +38,7 @@ const CollectionAnalysis = z
     id: z.string().uuid(),
     type: z.enum(["summary", "flashcards", "quiz", "deep_summary"]),
     result: z.string(),
+    createdAt: z.string().datetime().optional(),
   })
   .passthrough();
 const CollectionAnalyses = z.array(CollectionAnalysis);

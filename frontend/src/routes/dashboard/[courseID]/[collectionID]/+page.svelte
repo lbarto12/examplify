@@ -17,7 +17,9 @@
 		Loader,
 		ZoomIn,
 		Download,
-		ArrowLeft
+		ArrowLeft,
+		ChevronRight,
+		Plus
 	} from 'lucide-svelte';
 	import { fly } from 'svelte/transition';
 
@@ -123,6 +125,57 @@
 
 		creatingAnalysis = null;
 	}
+
+	// Group analyses by type
+	let analysesByType = $derived(
+		analysisTypes.map((typeConfig) => ({
+			...typeConfig,
+			analyses: collectionsService.analyses.filter((a) => a.type === typeConfig.type)
+		}))
+	);
+
+	let hasAnyAnalyses = $derived(collectionsService.analyses.length > 0);
+
+	let expandedType = $state<string | null>(null);
+	let dropdownDirection = $state<'down' | 'up'>('down');
+
+	function toggleExpand(type: string, event: MouseEvent) {
+		if (expandedType === type) {
+			expandedType = null;
+			return;
+		}
+
+		// Calculate available space
+		const button = event.currentTarget as HTMLElement;
+		const rect = button.getBoundingClientRect();
+		const spaceBelow = window.innerHeight - rect.bottom;
+		const spaceAbove = rect.top;
+
+		// If less than 200px below and more space above, open upward
+		dropdownDirection = spaceBelow < 200 && spaceAbove > spaceBelow ? 'up' : 'down';
+		expandedType = type;
+	}
+
+	function formatDate(dateString: string | undefined): string {
+		if (!dateString) return '';
+		const date = new Date(dateString);
+		const now = new Date();
+		const diffMs = now.getTime() - date.getTime();
+		const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+		if (diffDays === 0) {
+			const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+			if (diffHours === 0) {
+				const diffMins = Math.floor(diffMs / (1000 * 60));
+				return diffMins <= 1 ? 'Just now' : `${diffMins}m ago`;
+			}
+			return `${diffHours}h ago`;
+		}
+		if (diffDays === 1) return 'Yesterday';
+		if (diffDays < 7) return `${diffDays}d ago`;
+
+		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+	}
 </script>
 
 {#if !loaded}
@@ -199,80 +252,113 @@
 		{/if}
 	</div>
 
-	<!-- Analyses Section -->
+	<!-- Study Tools Section -->
 	<div>
 		<h2 class="text-xl font-bold mb-4 flex items-center gap-2">
 			<Sparkles class="w-5 h-5 text-primary" />
-			Analyses
+			Study Tools
 		</h2>
 
-		{#if collectionsService.analyses.length === 0}
-			<Card class="text-center py-8">
-				<Brain class="w-16 h-16 mx-auto mb-3 text-base-content/40" />
-				<p class="text-base-content/60 mb-1">No analyses created yet</p>
-				<p class="text-sm text-base-content/40">Create your first analysis below</p>
-			</Card>
-		{:else}
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				{#each collectionsService.analyses as analysis (analysis.id)}
-					{@const typeConfig = analysisTypes.find((t) => t.type === analysis.type)}
-					<a href={`/dashboard/${courseId}/${collectionID}/${analysis.id}`}>
-						<Card hover clickable class="h-full">
-							<div class="flex items-center gap-4">
-								{#if typeConfig}
-									<div class="w-12 h-12 bg-gradient-to-br {typeConfig.gradient} rounded-xl flex items-center justify-center flex-shrink-0">
-										<svelte:component this={typeConfig.icon} class="w-6 h-6 text-white" />
-									</div>
-									<div class="flex-1 min-w-0">
-										<h3 class="font-semibold">{typeConfig.title}</h3>
-										<p class="text-sm text-base-content/60">Click to view</p>
-									</div>
-								{/if}
-							</div>
-						</Card>
-					</a>
-				{/each}
-			</div>
-		{/if}
-	</div>
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+			{#each analysesByType as typeGroup}
+				{@const hasAnalyses = typeGroup.analyses.length > 0}
+				{@const isExpanded = expandedType === typeGroup.type}
 
-	<!-- Create Analysis -->
-	<div>
-		<h2 class="text-xl font-bold mb-4">Create New Analysis</h2>
+				<div class="relative group">
+					{#if hasAnalyses}
+						<!-- Has existing analyses - show expandable card -->
+						<div class="rounded-2xl overflow-hidden border border-base-300 bg-base-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+							<!-- Count badge - top left -->
+							<span class="absolute -top-2 -left-2 w-6 h-6 bg-linear-to-br {typeGroup.gradient} rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg z-10">
+								{typeGroup.analyses.length}
+							</span>
 
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-			{#each analysisTypes as analysisType}
-				<Card
-					hover
-					clickable
-					gradient
-					class="h-full"
-					onclick={() => createAnalysis(analysisType.type)}
-				>
-					<div class="text-center space-y-4">
-						<div class="w-16 h-16 mx-auto bg-gradient-to-br {analysisType.gradient} rounded-2xl flex items-center justify-center">
-							{#if creatingAnalysis === analysisType.type}
-								<Loader class="w-8 h-8 text-white animate-spin" />
-							{:else}
-								<svelte:component this={analysisType.icon} class="w-8 h-8 text-white" />
+							<!-- Card header -->
+							<button
+								class="w-full text-left p-4 pr-14 flex items-center gap-4 hover:bg-base-200/50 transition-colors"
+								onclick={(e) => toggleExpand(typeGroup.type, e)}
+							>
+								<div class="w-12 h-12 bg-linear-to-br {typeGroup.gradient} rounded-xl flex items-center justify-center shrink-0 shadow-md">
+									<svelte:component this={typeGroup.icon} class="w-6 h-6 text-white" />
+								</div>
+								<div class="flex-1 min-w-0">
+									<h3 class="font-bold mb-0.5">{typeGroup.title}</h3>
+									<p class="text-sm text-base-content/60">{typeGroup.description}</p>
+								</div>
+								<ChevronRight class="w-5 h-5 text-base-content/40 transition-transform duration-200 shrink-0 {isExpanded ? 'rotate-90' : ''}" />
+							</button>
+
+							<!-- Expanded list of analyses -->
+							{#if isExpanded}
+								<div
+									class="bg-base-200/30 p-2 max-h-48 overflow-y-auto {dropdownDirection === 'up' ? 'order-first border-b' : 'border-t'} border-base-300"
+								>
+									{#each typeGroup.analyses as analysis, index}
+										<a
+											href={`/dashboard/${courseId}/${collectionID}/${analysis.id}`}
+											class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-base-300/50 transition-colors"
+										>
+											<span class="w-7 h-7 rounded-full bg-linear-to-br {typeGroup.gradient} flex items-center justify-center text-xs font-bold text-white shadow-sm shrink-0">
+												{index + 1}
+											</span>
+											<span class="flex-1 font-medium text-sm">{typeGroup.title} #{index + 1}</span>
+											<span class="text-xs text-base-content/50 shrink-0">{formatDate(analysis.createdAt)}</span>
+											<ChevronRight class="w-4 h-4 text-base-content/40 shrink-0" />
+										</a>
+									{/each}
+								</div>
 							{/if}
-						</div>
 
-						<div>
-							<h3 class="font-bold text-lg mb-1">{analysisType.title}</h3>
-							<p class="text-sm text-base-content/60">{analysisType.description}</p>
+							<!-- Create new button -->
+							<button
+								class="absolute top-4 right-4 w-7 h-7 bg-primary/10 text-primary rounded-lg flex items-center justify-center hover:bg-primary hover:text-white transition-all z-10"
+								onclick={(e) => { e.stopPropagation(); createAnalysis(typeGroup.type); }}
+								title="Create new {typeGroup.title}"
+								disabled={creatingAnalysis === typeGroup.type}
+							>
+								{#if creatingAnalysis === typeGroup.type}
+									<Loader class="w-4 h-4 animate-spin" />
+								{:else}
+									<Plus class="w-4 h-4" />
+								{/if}
+							</button>
 						</div>
-
-						{#if creatingAnalysis === analysisType.type}
-							<Badge variant="primary">
-								<Loader class="w-3 h-3 mr-1 animate-spin" />
-								Creating...
-							</Badge>
-						{:else}
-							<div class="text-xs text-primary font-semibold">Click to create</div>
-						{/if}
-					</div>
-				</Card>
+					{:else}
+						<!-- No analyses yet - show create button -->
+						<button
+							class="w-full h-full"
+							onclick={() => createAnalysis(typeGroup.type)}
+							disabled={creatingAnalysis === typeGroup.type}
+						>
+							<div class="rounded-2xl border-2 border-dashed border-base-300 bg-base-100/50 p-4 flex items-center gap-4 hover:border-primary/50 hover:bg-base-200/30 transition-all">
+								<div class="w-12 h-12 bg-linear-to-br {typeGroup.gradient} rounded-xl flex items-center justify-center shrink-0 opacity-50 group-hover:opacity-80 transition-opacity shadow-md">
+									{#if creatingAnalysis === typeGroup.type}
+										<Loader class="w-6 h-6 text-white animate-spin" />
+									{:else}
+										<svelte:component this={typeGroup.icon} class="w-6 h-6 text-white" />
+									{/if}
+								</div>
+								<div class="flex-1 min-w-0 text-left">
+									<h3 class="font-bold mb-0.5">{typeGroup.title}</h3>
+									<p class="text-sm text-base-content/50">
+										{#if creatingAnalysis === typeGroup.type}
+											Creating your {typeGroup.title.toLowerCase()}...
+										{:else}
+											{typeGroup.description}
+										{/if}
+									</p>
+								</div>
+								<div class="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+									{#if creatingAnalysis === typeGroup.type}
+										<Loader class="w-5 h-5 animate-spin" />
+									{:else}
+										<Plus class="w-5 h-5" />
+									{/if}
+								</div>
+							</div>
+						</button>
+					{/if}
+				</div>
 			{/each}
 		</div>
 	</div>

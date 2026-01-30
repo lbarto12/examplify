@@ -37,9 +37,10 @@ func (h Handler) AnalyzeCollection(w http.ResponseWriter, r *http.Request, id op
 	}
 
 	apiresponses.Success(w, gencore.CollectionAnalysis{
-		Id:     analysis.ID,
-		Result: string(analysis.Result),
-		Type:   gencore.CollectionAnalysisType(analysis.Type),
+		Id:        analysis.ID,
+		Result:    string(analysis.Result),
+		Type:      gencore.CollectionAnalysisType(analysis.Type),
+		CreatedAt: &analysis.CreatedAt,
 	})
 }
 
@@ -65,9 +66,10 @@ func (handler Handler) GetCollectionAnalyses(w http.ResponseWriter, r *http.Requ
 	result := gencore.CollectionAnalyses{}
 	for _, i := range analyses {
 		result = append(result, gencore.CollectionAnalysis{
-			Id:     i.ID,
-			Type:   gencore.CollectionAnalysisType(i.Type),
-			Result: string(i.Result),
+			Id:        i.ID,
+			Type:      gencore.CollectionAnalysisType(i.Type),
+			Result:    string(i.Result),
+			CreatedAt: &i.CreatedAt,
 		})
 	}
 
@@ -82,9 +84,10 @@ func (handler Handler) GetAnalysis(w http.ResponseWriter, r *http.Request, id op
 	}
 
 	result := gencore.CollectionAnalysis{
-		Id:     analysis.ID,
-		Result: string(analysis.Result),
-		Type:   gencore.CollectionAnalysisType(analysis.Type),
+		Id:        analysis.ID,
+		Result:    string(analysis.Result),
+		Type:      gencore.CollectionAnalysisType(analysis.Type),
+		CreatedAt: &analysis.CreatedAt,
 	}
 
 	apiresponses.Success(w, result)

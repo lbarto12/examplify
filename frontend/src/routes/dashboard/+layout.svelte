@@ -16,7 +16,9 @@
 		User,
 		Search,
 		Plus,
-		GraduationCap
+		GraduationCap,
+		PanelLeftClose,
+		PanelLeft
 	} from 'lucide-svelte';
 	import { fly, slide, fade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
@@ -24,6 +26,7 @@
 	let { children } = $props();
 
 	let sidebarOpen = $state(false);
+	let sidebarCollapsed = $state(false);
 	let searchQuery = $state('');
 	let createCourseModalOpen = $state(false);
 	let newCourseName = $state('');
@@ -70,6 +73,10 @@
 
 	function closeSidebar() {
 		sidebarOpen = false;
+	}
+
+	function toggleSidebarCollapse() {
+		sidebarCollapsed = !sidebarCollapsed;
 	}
 
 	function openCreateCourseModal() {
@@ -165,72 +172,120 @@
 
 	<div class="flex">
 		<!-- Sidebar (Desktop) -->
-		<aside class="hidden lg:block w-72 bg-base-100 border-r border-base-300 min-h-[calc(100vh-65px)] p-6">
-			<div class="mb-6">
-				<h2 class="text-lg font-bold mb-2 flex items-center gap-2">
-					<GraduationCap class="w-5 h-5 text-primary" />
-					My Courses
-				</h2>
-
-				<!-- Search -->
-				<div class="relative mb-3">
-					<Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50" />
-					<input
-						type="text"
-						placeholder="Search courses..."
-						bind:value={searchQuery}
-						class="input input-bordered input-sm w-full pl-10"
-					/>
-				</div>
-
-				<!-- Create Course Button -->
+		<aside class="hidden lg:flex flex-col bg-base-100 border-r border-base-300 min-h-[calc(100vh-65px)] transition-all duration-300 {sidebarCollapsed ? 'w-16' : 'w-72'}">
+			<!-- Collapse toggle -->
+			<div class="p-3 border-b border-base-300 flex {sidebarCollapsed ? 'justify-center' : 'justify-end'}">
 				<button
-					onclick={openCreateCourseModal}
-					class="btn btn-sm gradient-primary text-white w-full"
+					class="btn btn-ghost btn-sm btn-square"
+					onclick={toggleSidebarCollapse}
+					title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
 				>
-					<Plus class="w-4 h-4" />
-					Create Course
+					{#if sidebarCollapsed}
+						<PanelLeft class="w-4 h-4" />
+					{:else}
+						<PanelLeftClose class="w-4 h-4" />
+					{/if}
 				</button>
 			</div>
 
-			<!-- Course list -->
-			<div class="space-y-3">
-				{#if coursesService.loading}
-					{#each Array(5) as _}
-						<Skeleton height="80px" class="w-full" />
-					{/each}
-				{:else if filteredCourses.length === 0}
-					<div class="text-center py-8 text-base-content/60">
-						<p class="text-sm">
-							{searchQuery ? 'No courses found' : 'No courses yet'}
-						</p>
-					</div>
-				{:else}
-					{#each filteredCourses as course, i}
-						<a
-							href={`/dashboard/${course}`}
-							class="block group"
-							transition:slide={{ duration: 200 }}
+			<div class="flex-1 overflow-y-auto p-4 {sidebarCollapsed ? 'px-2' : 'p-6'}">
+				{#if !sidebarCollapsed}
+					<div class="mb-6">
+						<h2 class="text-lg font-bold mb-2 flex items-center gap-2">
+							<GraduationCap class="w-5 h-5 text-primary" />
+							My Courses
+						</h2>
+
+						<!-- Search -->
+						<div class="relative mb-3">
+							<Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50" />
+							<input
+								type="text"
+								placeholder="Search courses..."
+								bind:value={searchQuery}
+								class="input input-bordered input-sm w-full pl-10"
+							/>
+						</div>
+
+						<!-- Create Course Button -->
+						<button
+							onclick={openCreateCourseModal}
+							class="btn btn-sm gradient-primary text-white w-full"
 						>
-							<div
-								class="relative overflow-hidden rounded-xl bg-gradient-to-br {getCourseColor(
-									i
-								)} p-[2px] card-hover"
-							>
-								<div class="bg-base-100 rounded-xl p-4 h-full">
-									<div class="flex items-center gap-3">
-										<div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
-											<BookOpen class="w-5 h-5 text-{getCourseColor(i).split('-')[1]}-500" />
-										</div>
-										<div class="flex-1 min-w-0">
-											<h3 class="font-semibold text-sm truncate">{course}</h3>
-											<p class="text-xs text-base-content/60">View collections</p>
+							<Plus class="w-4 h-4" />
+							Create Course
+						</button>
+					</div>
+
+					<!-- Course list -->
+					<div class="space-y-3">
+						{#if coursesService.loading}
+							{#each Array(5) as _}
+								<Skeleton height="80px" class="w-full" />
+							{/each}
+						{:else if filteredCourses.length === 0}
+							<div class="text-center py-8 text-base-content/60">
+								<p class="text-sm">
+									{searchQuery ? 'No courses found' : 'No courses yet'}
+								</p>
+							</div>
+						{:else}
+							{#each filteredCourses as course, i}
+								<a
+									href={`/dashboard/${course}`}
+									class="block group"
+									transition:slide={{ duration: 200 }}
+								>
+									<div
+										class="relative overflow-hidden rounded-xl bg-gradient-to-br {getCourseColor(
+											i
+										)} p-[2px] card-hover"
+									>
+										<div class="bg-base-100 rounded-xl p-4 h-full">
+											<div class="flex items-center gap-3">
+												<div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+													<BookOpen class="w-5 h-5 text-{getCourseColor(i).split('-')[1]}-500" />
+												</div>
+												<div class="flex-1 min-w-0">
+													<h3 class="font-semibold text-sm truncate">{course}</h3>
+													<p class="text-xs text-base-content/60">View collections</p>
+												</div>
+											</div>
 										</div>
 									</div>
-								</div>
-							</div>
-						</a>
-					{/each}
+								</a>
+							{/each}
+						{/if}
+					</div>
+				{:else}
+					<!-- Collapsed view - show icons only -->
+					<div class="space-y-2">
+						<button
+							onclick={openCreateCourseModal}
+							class="btn btn-sm btn-ghost btn-square w-full"
+							title="Create Course"
+						>
+							<Plus class="w-5 h-5 text-primary" />
+						</button>
+
+						<div class="divider my-2"></div>
+
+						{#if coursesService.loading}
+							{#each Array(3) as _}
+								<Skeleton height="40px" class="w-full rounded-lg" />
+							{/each}
+						{:else}
+							{#each filteredCourses as course, i}
+								<a
+									href={`/dashboard/${course}`}
+									class="flex items-center justify-center w-10 h-10 mx-auto rounded-lg bg-gradient-to-br {getCourseColor(i)} hover:scale-110 transition-transform"
+									title={course}
+								>
+									<span class="text-white font-bold text-sm">{course.charAt(0).toUpperCase()}</span>
+								</a>
+							{/each}
+						{/if}
+					</div>
 				{/if}
 			</div>
 		</aside>

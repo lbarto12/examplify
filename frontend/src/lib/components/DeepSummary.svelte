@@ -1,30 +1,49 @@
 <script lang="ts">
-	import '../../app.css';
-    type DeepSummaryItem = {
-        concept: string;
-        details: string;
-        definition: string;
-    };
+	import Latex from './ui/Latex.svelte';
+	import { BookOpen } from 'lucide-svelte';
 
-    type DeepSummaryResult = DeepSummaryItem[];
+	type DeepSummaryItem = {
+		concept: string;
+		details: string;
+		definition: string;
+	};
 
-    let { data }: { data: DeepSummaryResult } = $props();
+	type DeepSummaryResult = DeepSummaryItem[];
 
+	let { data }: { data: DeepSummaryResult } = $props();
 </script>
 
-<div class="card bg-base-100 p-4 shadow-md">
-	<h2 class="text-xl font-bold mb-2">Deep Summary</h2>
-	<div class="flex flex-col gap-4">
-		{#each data as item}
-			<div class="border p-3 rounded">
-				<p class="font-bold">{item.concept}</p>
-				<p class="text-gray-700 mt-1">{item.details}</p>
-				<p class="italic text-gray-500 mt-1">{item.definition}</p>
+<div class="space-y-6">
+	<h2 class="text-xl font-bold flex items-center gap-2">
+		<BookOpen class="w-5 h-5 text-primary" />
+		Deep Summary
+	</h2>
+
+	<div class="grid gap-4">
+		{#each data as item, index}
+			<div class="card bg-base-100 shadow-md border border-base-300 overflow-hidden">
+				<div class="bg-gradient-to-r from-primary/10 to-secondary/10 px-6 py-4 border-b border-base-300">
+					<h3 class="font-bold text-lg">
+						<Latex content={item.concept} />
+					</h3>
+				</div>
+				<div class="p-6 space-y-4">
+					<div>
+						<h4 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-2">Details</h4>
+						<div class="text-base-content">
+							<Latex content={item.details} />
+						</div>
+					</div>
+					{#if item.definition}
+						<div class="bg-base-200/50 rounded-lg p-4 border-l-4 border-primary">
+							<h4 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-2">Definition</h4>
+							<div class="italic text-base-content/80">
+								<Latex content={item.definition} />
+							</div>
+						</div>
+					{/if}
+				</div>
 			</div>
 		{/each}
 	</div>
 </div>
-
-<style>
-	@import '../../app.css';
-</style>

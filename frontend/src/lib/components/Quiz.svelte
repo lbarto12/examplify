@@ -1,7 +1,9 @@
 <script lang="ts">
-	import { Check, X } from 'lucide-svelte';
+	import { Check, X, RotateCcw } from 'lucide-svelte';
 	import Card from './ui/Card.svelte';
 	import Badge from './ui/Badge.svelte';
+	import Button from './ui/Button.svelte';
+	import Latex from './ui/Latex.svelte';
 
 	type QuizQuestion = {
 		question: string;
@@ -52,6 +54,19 @@
 
 		return `${base} btn-ghost opacity-50`;
 	}
+
+	function resetQuiz() {
+		selected = [];
+		locked = [];
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
+
+	// Smooth scroll to top when quiz is completed
+	$effect(() => {
+		if (allAnswered && totalAnswered === data.length) {
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+		}
+	});
 </script>
 
 <div class="space-y-6">
@@ -75,9 +90,9 @@
 		<progress class="progress progress-primary w-full" value={percentComplete} max="100"></progress>
 
 		{#if allAnswered}
-			<div class="mt-4 text-center">
+			<div class="mt-4 text-center space-y-4">
 				{#if scorePercent === 100}
-					<p class="text-success font-bold text-xl">Perfect Score! 🎉</p>
+					<p class="text-success font-bold text-xl">Perfect Score!</p>
 				{:else if scorePercent >= 80}
 					<p class="text-success font-semibold">Great job! Keep it up!</p>
 				{:else if scorePercent >= 60}
@@ -85,6 +100,12 @@
 				{:else}
 					<p class="text-error font-semibold">Keep studying! You'll get there.</p>
 				{/if}
+				<Button variant="outline" onclick={resetQuiz}>
+					{#snippet icon()}
+						<RotateCcw class="w-4 h-4" />
+					{/snippet}
+					Retry Quiz
+				</Button>
 			</div>
 		{/if}
 	</Card>
@@ -117,7 +138,9 @@
 					</div>
 
 					<div class="flex-1">
-						<p class="font-semibold text-lg mb-4">{q.question}</p>
+						<div class="font-semibold text-lg mb-4">
+							<Latex content={q.question} />
+						</div>
 
 						<div class="space-y-2">
 							{#each q.options as option, oIndex}
@@ -147,7 +170,7 @@
 												{/if}
 											{/if}
 										</span>
-										<span class="flex-1 text-left">{option}</span>
+										<span class="flex-1 text-left"><Latex content={option} /></span>
 									</span>
 								</button>
 							{/each}

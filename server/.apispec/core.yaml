@@ -394,6 +394,9 @@ components:
             - deep_summary
         result:
           type: string
+        createdAt:
+          type: string
+          format: date-time
 
       required:
         - id

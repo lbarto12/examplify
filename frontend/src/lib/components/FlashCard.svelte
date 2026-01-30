@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-svelte';
 	import Button from './ui/Button.svelte';
+	import Latex from './ui/Latex.svelte';
 
 	type Flashcard = {
 		question: string;
@@ -132,9 +133,9 @@
 						<span class="text-xs text-base-content/40">Click to reveal answer</span>
 					</div>
 					<div class="flex-1 flex items-center justify-center">
-						<p class="text-xl md:text-2xl font-medium text-center leading-relaxed">
-							{data[currentIndex]?.question}
-						</p>
+						<div class="text-xl md:text-2xl font-medium text-center leading-relaxed">
+							<Latex content={data[currentIndex]?.question || ''} />
+						</div>
 					</div>
 					<div class="text-center text-xs text-base-content/40 mt-4">
 						Press Space or click to flip
@@ -150,9 +151,9 @@
 						<span class="text-xs text-base-content/40">Click to see question</span>
 					</div>
 					<div class="flex-1 flex items-center justify-center">
-						<p class="text-lg md:text-xl text-center leading-relaxed">
-							{data[currentIndex]?.answer}
-						</p>
+						<div class="text-lg md:text-xl text-center leading-relaxed">
+							<Latex content={data[currentIndex]?.answer || ''} />
+						</div>
 					</div>
 					<div class="text-center text-xs text-base-content/40 mt-4">
 						Use arrow keys to navigate

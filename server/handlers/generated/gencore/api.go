@@ -6,6 +6,7 @@ package gencore
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/oapi-codegen/runtime"
@@ -49,9 +50,10 @@ type CollectionAnalyses = []CollectionAnalysis
 
 // CollectionAnalysis defines model for CollectionAnalysis.
 type CollectionAnalysis struct {
-	Id     openapi_types.UUID     `json:"id"`
-	Result string                 `json:"result"`
-	Type   CollectionAnalysisType `json:"type"`
+	Id        openapi_types.UUID     `json:"id"`
+	Result    string                 `json:"result"`
+	Type      CollectionAnalysisType `json:"type"`
+	CreatedAt *time.Time             `json:"createdAt,omitempty"`
 }
 
 // CollectionAnalysisType defines model for CollectionAnalysis.Type.
